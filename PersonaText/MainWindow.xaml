@@ -26,6 +26,7 @@
             </MenuItem>
             <MenuItem Header="Tools">
                 <MenuItem Header="Export text from..." Name="mm_tools_export" Click="mm_tools_export_Click"></MenuItem>
+                <MenuItem Header="Text Visualizer" Name="mm_tools_visual" Click="mm_tools_visual_Click"></MenuItem>
             </MenuItem>
         </Menu>
 
@@ -38,14 +39,14 @@
             <Border Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,1,1">
                 <Menu  x:Name="menuold" Background="#FFF0F0F0">
                     <MenuItem Header="Open OLD FNT" Name="Old_FNT_Open" Click="FNold"></MenuItem>
-                    <MenuItem Header="Set Char" Name="Old_Char_Set" Click="CharSet"></MenuItem>
+                    <MenuItem Header="Set Char" Name="Old_Char_Set" Click="CharSet_old"></MenuItem>
                     <MenuItem IsEnabled="{Binding openfile}" Header="Save as Text" Name="Old_Save" Click="STold"></MenuItem>
                 </Menu>
             </Border>
             <Border Grid.Column="2" BorderBrush="Black" BorderThickness="1,1,0,1">
                 <Menu  x:Name="menunew">
                     <MenuItem Header="Open NEW FNT" Name="New_FNT_Open" Click="FNnew"></MenuItem>
-                    <MenuItem Header="Set Char" Name="New_Char_Set" Click="CharSet"></MenuItem>
+                    <MenuItem Header="Set Char" Name="New_Char_Set" Click="CharSet_new"></MenuItem>
                 </Menu>
             </Border>
         </Grid>

@@ -33,7 +33,6 @@ namespace PersonaText
         public MainWindow()
         {
             InitializeComponent();
-            MSG1.msg.CollectionChanged += Msg_CollectionChanged;
             DataContext = MSG1;
 
             if (File.Exists(@"OLD.TXT"))
@@ -57,12 +56,6 @@ namespace PersonaText
             new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
         }
 
-        private void Msg_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            string a = e.ToString();
-            //throw new NotImplementedException();
-        }
-
         private string[] OpenFiles()
         {
             string[] str = new string[0];
@@ -84,15 +77,14 @@ namespace PersonaText
         {
             MSG1.openfile = true;
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "PMD files (*.PM1)|*.PM1";
+            ofd.Filter = "All supported format (*.PM1;*.BF;*.BMD)|*.PM1;*.BF;*.BMD|All files|*.*";
             if (ofd.ShowDialog() == true)
             {
                 MSG1.msg.Clear();
-
                 Import_Path = ofd.FileName;
                 Import_FileName = ofd.SafeFileName;
                 MSG1.ParseMSG1(Import_Path);
-                MSG1.ParseSTRINGs(old_char);
+                MSG1.UpdateSTRINGs(old_char);
                 this.Title = "Persona Font Editor - [" + Import_FileName + "]";
             }
 
@@ -176,44 +168,39 @@ namespace PersonaText
             }
         }
 
-        private void CharSet(object sender, RoutedEventArgs e)
+        private void CharSet_old(object sender, RoutedEventArgs e)
         {
+            this.Visibility = Visibility.Hidden;
+
             try
             {
-                MenuItem temp = (MenuItem)sender;
                 CharSet CS = new CharSet();
-                CS.chlt = old_char;
                 CS.Owner = this;
-                CS.ShowDialog();
-                if (CS.saving)
+                CS.chlt = old_char;
+                if (CS.ShowDialog() == true)
                 {
-                    if (temp.Name == "Old_Char_Set")
-                    {
-                        Text.WriteFNMP(@"OLD.TXT", ref old_char);
-                        MSG1.ParseSTRINGs(old_char);
-                    }
-                    else if (temp.Name == "New_Char_Set")
-                    {
-                        Text.WriteFNMP(@"NEW.TXT", ref new_char);
-                    }
-                    else { throw new Exception("Char set error!"); }
+                    Text.WriteFNMP(@"OLD.TXT", ref old_char);
+                    MSG1.UpdateSTRINGs(old_char);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
             }
+
+            this.Visibility = Visibility.Visible;
         }
 
-        private void CSnew(object sender, RoutedEventArgs e)
+        private void CharSet_new(object sender, RoutedEventArgs e)
         {
+            this.Visibility = Visibility.Hidden;
+
             try
             {
                 CharSet CS = new CharSet();
-                CS.chlt = new_char;
                 CS.Owner = this;
-                CS.ShowDialog();
-                if (CS.saving)
+                CS.chlt = new_char;
+                if (CS.ShowDialog() == true)
                 {
                     Text.WriteFNMP(@"NEW.TXT", ref new_char);
                 }
@@ -222,6 +209,8 @@ namespace PersonaText
             {
                 MessageBox.Show(ex.ToString());
             }
+
+            this.Visibility = Visibility.Visible;
         }
 
         private void STold(object sender, RoutedEventArgs e)
@@ -240,7 +229,17 @@ namespace PersonaText
             Tool_Export TE = new PersonaText.Tool_Export();
             TE.old_char = old_char;
             TE.Owner = this;
+            this.Visibility = Visibility.Hidden;
             TE.ShowDialog();
+            this.Visibility = Visibility.Visible;
+        }
+
+        private void mm_tools_visual_Click(object sender, RoutedEventArgs e)
+        {
+            Tool_Visual TV = new Tool_Visual();
+            TV.Owner = this;
+            TV.CharList = old_char;
+            TV.ShowDialog();
         }
     }
 }

@@ -63,40 +63,111 @@ namespace PersonaText
             }
         }
 
+        #region ParseMSG1
+
         public void ParseMSG1(string FileName)
         {
-            MemoryStream ms = Get(FileName);
-            ParseMSG1(ref ms);
+            MemoryStream ms = GetMSG1(FileName);
+            if (ms != null)
+            {
+                ParseMSG1(ref ms);
+            }
         }
 
-        public void ParseSTRINGs(List<fnmp> old_char)
+        private MemoryStream GetMSG1(string FileName)
         {
-            foreach (var MSG in msg)
+            byte[] buffer = new byte[4];
+
+            FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+            fs.Position = 8;
+            fs.Read(buffer, 0, 4);
+            fs.Close();
+            string FileType = System.Text.Encoding.Default.GetString(buffer);
+
+            if (FileType == "PMD1")
             {
-                List<byte[]> buffer = new List<byte[]>();
-
-                if (MSG.Type == "MSG")
-                {
-                    buffer = MSGtoBytes(MSG.SourceBytes);
-                }
-                else if (MSG.Type == "SEL")
-                {
-                    buffer = SELtoBytes(MSG.SourceBytes);
-                }
-
-                MSG.Bytes.Clear();
-                foreach (var MSG_B in buffer)
-                {
-                    MSG.Bytes.Add(MSG_B);
-                }
-
-                MSG.Strings.Clear();
-                List<MyString> s_buffer = BytesToString(buffer, old_char);
-                foreach (var MSG_S in s_buffer)
-                {
-                    MSG.Strings.Add(MSG_S);
-                }
+                return ParsePMD1(FileName);
             }
+            else if (FileType == "FLW0")
+            {
+                return ParseFLW0(FileName);
+            }
+            else if (FileType == "MSG1")
+            {
+                fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+                MemoryStream ms = new MemoryStream();
+                fs.CopyTo(ms);
+                return ms;
+            }
+            else
+            {
+                MessageBox.Show("Not supported format.", "Attention!", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+        }
+
+        private MemoryStream ParsePMD1(string FileName)
+        {
+            MemoryStream temp = new MemoryStream();
+
+            try
+            {
+                FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+                fs.Position = 0x20;
+                while (Text.ReadByteStream(ref fs, 4) != 6)
+                {
+                    fs.Position = fs.Position + 12;
+                }
+                int MSG1_Size = Text.ReadByteStream(ref fs, 4);
+                fs.Position = fs.Position + 4;
+                int MSG1_Position = Text.ReadByteStream(ref fs, 4);
+
+                byte[] buffer = new byte[MSG1_Size];
+                fs.Position = MSG1_Position;
+                fs.Read(buffer, 0, MSG1_Size);
+                temp.Write(buffer, 0, MSG1_Size);
+                return temp;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Get MSG1 error!");
+                MessageBox.Show(e.ToString());
+                temp = new MemoryStream();
+            }
+
+            return temp;
+        }
+
+        private MemoryStream ParseFLW0(string FileName)
+        {
+            MemoryStream temp = new MemoryStream();
+
+            try
+            {
+                FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+                fs.Position = 0x20;
+                while (Text.ReadByteStream(ref fs, 4) != 3)
+                {
+                    fs.Position = fs.Position + 12;
+                }
+                fs.Position = fs.Position + 4;
+                int MSG1_Size = Text.ReadByteStream(ref fs, 4);
+                int MSG1_Position = Text.ReadByteStream(ref fs, 4);
+
+                byte[] buffer = new byte[MSG1_Size];
+                fs.Position = MSG1_Position;
+                fs.Read(buffer, 0, MSG1_Size);
+                temp.Write(buffer, 0, MSG1_Size);
+                return temp;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Get MSG1 error!");
+                MessageBox.Show(e.ToString());
+                temp = new MemoryStream();
+            }
+
+            return temp;
         }
 
         private void ParseMSG1(ref MemoryStream ms)
@@ -176,35 +247,36 @@ namespace PersonaText
             }
         }
 
-        private MemoryStream Get(string FileName)
+        #endregion ParseMSG1
+
+        public void UpdateSTRINGs(List<fnmp> old_char)
         {
-            MemoryStream temp = new MemoryStream();
-
-            try
+            foreach (var MSG in msg)
             {
-                FileStream fs = new FileStream(FileName, FileMode.Open);
-                while (Text.ReadByteStream(ref fs, 4) != 6)
+                List<byte[]> buffer = new List<byte[]>();
+
+                if (MSG.Type == "MSG")
                 {
-                    fs.Position = fs.Position + 12;
+                    buffer = MSGtoBytes(MSG.SourceBytes);
                 }
-                int MSG1_Size = Text.ReadByteStream(ref fs, 4);
-                fs.Position = fs.Position + 4;
-                int MSG1_Position = Text.ReadByteStream(ref fs, 4);
+                else if (MSG.Type == "SEL")
+                {
+                    buffer = SELtoBytes(MSG.SourceBytes);
+                }
 
-                byte[] Bytes = new byte[MSG1_Size];
-                fs.Position = MSG1_Position;
-                fs.Read(Bytes, 0, MSG1_Size);
-                temp.Write(Bytes, 0, MSG1_Size);
-                return temp;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Get MSG1 error!");
-                MessageBox.Show(e.ToString());
-                temp = new MemoryStream();
-            }
+                MSG.Bytes.Clear();
+                foreach (var MSG_B in buffer)
+                {
+                    MSG.Bytes.Add(MSG_B);
+                }
 
-            return temp;
+                MSG.Strings.Clear();
+                List<MyString> s_buffer = BytesToString(buffer, old_char);
+                foreach (var MSG_S in s_buffer)
+                {
+                    MSG.Strings.Add(MSG_S);
+                }
+            }
         }
 
         private List<byte[]> MSGtoBytes(byte[] B)
@@ -215,12 +287,11 @@ namespace PersonaText
             bool textread = false;
             bool linktonameread = false;
 
-            try
+            int length = B.Length;
+            for (int i = 0; i < length; i++)
             {
-                int length = B.Length;
-                for (int i = 0; i < length; i++)
+                try
                 {
-
                     if (0x00 <= B[i] & B[i] < 0x20)
                     {
                         if (B[i] == 0x00)
@@ -349,7 +420,10 @@ namespace PersonaText
                         }
                         else if (B[i] == 0xF4)
                         {
-                            if (B[i + 1] == 0x84)
+                            if (B[i + 1] == 0x45)
+                            {
+                            }
+                            else if (B[i + 1] == 0x84)
                             {
                             }
                             else if (B[i + 1] == 0x87)
@@ -382,15 +456,15 @@ namespace PersonaText
                         }
                         else { throw new Exception("NOT F1-F5"); }
                     }
-
                 }
+                catch (Exception e)
+                {
+                    MessageBox.Show("MSGtBytes Error");
+                    MessageBox.Show(e.ToString());
+                }
+            }
 
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("MSGtBytes Error");
-                MessageBox.Show(e.ToString());
-            }
+
             return temp;
         }
 
@@ -600,7 +674,7 @@ namespace PersonaText
                     }
                     else
                     {
-                        List.Add(new PersonaText.fnmp { Index = Index, Char = Char });
+                        List.Add(new PersonaText.fnmp { Index = Index, Char = Char});
                     }
                 }
 
@@ -718,6 +792,15 @@ namespace PersonaText
 
                 FontDec.Position = 0;
 
+                FONT.Position = GlyphCutTable_Pos;
+                byte[,] GlyphCut = new byte[TotalNumberOfGlyphs, 2];
+                for (int i = 0; i < TotalNumberOfGlyphs; i++)
+                {
+                    GlyphCut[i, 0] = (byte)FONT.ReadByte();
+                    GlyphCut[i, 1] = (byte)FONT.ReadByte();
+                }
+
+
                 int k = 32;
                 for (int i = 0; i < TotalNumberOfGlyphs; i++)
                 {
@@ -730,10 +813,11 @@ namespace PersonaText
                     {
                         fnmp fnmp = List.Find(x => x.Index == k);
                         fnmp.Image = BMP;
+                        fnmp.Cut = new PersonaText.MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] };
                     }
                     else
                     {
-                        List.Add(new PersonaText.fnmp { Index = k, Image = BMP, Char = "" });
+                        List.Add(new PersonaText.fnmp { Index = k, Image = BMP, Char = "", Cut = new PersonaText.MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] } });
                     }
 
                     k++;
@@ -838,114 +922,6 @@ namespace PersonaText
 
             return temp;
         }
-    }
-
-    public class msg
-    {
-        private int _Index = 0;
-        public int Index
-        {
-            get
-            {
-                return _Index;
-            }
-            set
-            {
-                _Index = value;
-            }
-        }
-
-        private string _Type = "";
-        public string Type
-        {
-            get
-            {
-                return _Type;
-            }
-            set
-            {
-                _Type = value;
-            }
-        }
-
-        private string _Name = "";
-        public string Name
-        {
-            get
-            {
-                return _Name;
-            }
-            set
-            {
-                _Name = value;
-            }
-        }
-
-        private byte[] _SourceBytes = new byte[0];
-        public byte[] SourceBytes
-        {
-            get
-            {
-                return _SourceBytes;
-            }
-            set
-            {
-                _SourceBytes = value;
-            }
-        }
-
-        private ObservableCollection<byte[]> _Bytes = new ObservableCollection<byte[]>();
-        public ObservableCollection<byte[]> Bytes
-        {
-            get
-            {
-                return _Bytes;
-            }
-            set
-            {
-                _Bytes = value;
-            }
-        }
-
-        private ObservableCollection<MyString> _Strings = new ObservableCollection<MyString>();
-        public ObservableCollection<MyString> Strings
-        {
-            get
-            {
-                return _Strings;
-            }
-            set
-            {
-                _Strings = value;
-            }
-        }
-    }
-
-    public class MyString
-    {
-        private string _mystr_old = "";
-        private string _mystr_new = "";
-
-        public string mystr_old
-        {
-            get { return _mystr_old; }
-            set { _mystr_old = value; }
-        }
-
-        public string mystr_new
-        {
-            get { return _mystr_new; }
-            set { _mystr_new = value; }
-        }
-    }
-
-    public class fnmp
-    {
-        public int Index { get; set; }
-
-        public string Char { get; set; }
-
-        public BitmapSource Image { get; set; }
     }
 
     public class Project

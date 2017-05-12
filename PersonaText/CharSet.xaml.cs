@@ -16,13 +16,10 @@ using System.Collections.ObjectModel;
 
 namespace PersonaText
 {
-    /// <summary>
-    /// Логика взаимодействия для CharSet.xaml
-    /// </summary>
     public partial class CharSet : Window
     {
         Text Text = new Text();
-        public bool saving = false;
+
         public List<fnmp> chlt = new List<fnmp>();
         public ObservableCollection<fnmp> _CharList = new ObservableCollection<fnmp>();
         public ObservableCollection<fnmp> CharList
@@ -34,12 +31,6 @@ namespace PersonaText
         public CharSet()
         {
             InitializeComponent();
-            DataContext = this;
-        }
-
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
         }
 
         private void save()
@@ -49,12 +40,13 @@ namespace PersonaText
                 fnmp CL2 = chlt.Find(x => x.Index == CL.Index);
                 CL2.Char = CL.Char;
             }
+
+            this.DialogResult = true;
         }
 
         private void button_save_Click(object sender, RoutedEventArgs e)
         {
             save();
-            saving = true;
             this.Close();
         }
 
@@ -64,20 +56,20 @@ namespace PersonaText
             {
                 CharList.Add(new fnmp { Index = CL.Index, Image = CL.Image, Char = CL.Char });
             }
+
+            DataContext = this;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (saving == false)
+            if (this.DialogResult != true)
             {
-                MessageBoxResult dr = MessageBox.Show("Save changes?", "Attention", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (dr == MessageBoxResult.Yes)
+                if (MessageBox.Show("Save changes?", "Attention", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     save();
                 }
             }
         }
-
 
     }
 }

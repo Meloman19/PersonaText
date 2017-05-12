@@ -37,8 +37,8 @@
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" x:Name="button_save" Content="Save" Margin="2" Click="button_save_Click" FontSize="16"/>
-            <Button Grid.Column="1" x:Name="button_cancel" Content="Cancel" Margin="2" Click="button_cancel_Click" FontSize="16"/>
+            <Button Grid.Column="0" IsDefault="True" x:Name="button_save" Content="Save" Margin="2" Click="button_save_Click" FontSize="16"/>
+            <Button Grid.Column="1" IsCancel="True" x:Name="button_cancel" Content="Cancel" Margin="2" FontSize="16"/>
         </Grid>
 
     </Grid>

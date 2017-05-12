@@ -1,17 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.IO;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using Microsoft.Win32;
 using System.ComponentModel;
 
 namespace PersonaText
@@ -64,16 +55,11 @@ namespace PersonaText
         {
             DirectoryInfo dirInfo = new DirectoryInfo(path);
 
-            FileInfo[] info = dirInfo.GetFiles("*.PM1");
+            string[] extensions = new[] { ".pm1", ".bmd", ".bf" };
+            FileInfo[] info = dirInfo.GetFiles("*.*",SearchOption.AllDirectories).Where(f => extensions.Contains(f.Extension.ToLower())).ToArray();
             foreach (FileInfo f in info)
             {
                 FL.Add(new PersonaText.FileList { FullName = f.FullName, Name = "EXPORT\\" + f.Name });
-            }
-
-            DirectoryInfo[] subDir = dirInfo.GetDirectories();
-            foreach (DirectoryInfo d in subDir)
-            {
-                getlist(d.FullName, ref FL);
             }
         }
 
@@ -81,7 +67,7 @@ namespace PersonaText
         {
             Microsoft.Win32.OpenFileDialog ofd = new Microsoft.Win32.OpenFileDialog();
             ofd.Multiselect = true;
-            ofd.Filter = "PMD files (*.PM1)|*.PM1";
+            ofd.Filter = "All supported format (*.PM1;*.BF;*.BMD)|*.PM1;*.BF;*.BMD";
             if (ofd.ShowDialog() == true)
             {
                 foreach (var str in ofd.FileNames)
@@ -148,7 +134,7 @@ namespace PersonaText
 
                 MSG1.msg.Clear();
                 MSG1.ParseMSG1(FileList[i].FullName);
-                MSG1.ParseSTRINGs(old_char);
+                MSG1.UpdateSTRINGs(old_char);
                 MSG1.SaveAsText(FileList[i].Name + ".txt");
             }
 

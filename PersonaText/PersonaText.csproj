@@ -60,8 +60,12 @@
     </Compile>
     <Compile Include="Classes\IniFile.cs" />
     <Compile Include="Classes\Add.cs" />
+    <Compile Include="Classes\Types.cs" />
     <Compile Include="Tool_Export.xaml.cs">
       <DependentUpon>Tool_Export.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tool_Visual.xaml.cs">
+      <DependentUpon>Tool_Visual.xaml</DependentUpon>
     </Compile>
     <Page Include="CharSet.xaml">
       <SubType>Designer</SubType>
@@ -80,6 +84,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Tool_Export.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tool_Visual.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
