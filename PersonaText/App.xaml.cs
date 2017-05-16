@@ -7,10 +7,18 @@ using System.Windows;
 
 namespace PersonaText
 {
-    /// <summary>
-    /// Логика взаимодействия для App.xaml
-    /// </summary>
     public partial class App : Application
     {
+        private void Application_Startup(object sender, StartupEventArgs e)
+        {
+            MainWindow MW = new MainWindow();
+
+            if (e.Args.Length > 0)
+            {
+                MW.Import_Path = e.Args[0];
+            }
+
+            MW.Show();
+        }
     }
 }

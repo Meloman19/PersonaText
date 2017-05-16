@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -61,13 +62,20 @@
     <Compile Include="Classes\IniFile.cs" />
     <Compile Include="Classes\Add.cs" />
     <Compile Include="Classes\Types.cs" />
-    <Compile Include="Tool_Export.xaml.cs">
+    <Compile Include="GetMSG1from.xaml.cs">
+      <DependentUpon>GetMSG1from.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Tool_Export.xaml.cs">
       <DependentUpon>Tool_Export.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tool_Visual.xaml.cs">
+    <Compile Include="Tools\Tool_Visual.xaml.cs">
       <DependentUpon>Tool_Visual.xaml</DependentUpon>
     </Compile>
     <Page Include="CharSet.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GetMSG1from.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -83,11 +91,11 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Tool_Export.xaml">
+    <Page Include="Tools\Tool_Export.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Tool_Visual.xaml">
+    <Page Include="Tools\Tool_Visual.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

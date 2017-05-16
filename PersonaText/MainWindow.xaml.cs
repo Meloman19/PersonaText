@@ -1,21 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.IO;
-using System.IO.Compression;
-using System.Drawing;
-using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.IO;
 using Microsoft.Win32;
-
+using System.ComponentModel;
 
 namespace PersonaText
 {
@@ -24,7 +14,7 @@ namespace PersonaText
         public MSG1 MSG1 = new MSG1();
 
         string Import_FileName = "";
-        string Import_Path = "";
+        public string Import_Path = "";
         Text Text = new Text();
 
         public List<fnmp> old_char = new List<fnmp>();
@@ -75,19 +65,22 @@ namespace PersonaText
 
         private void mi_import_click(object sender, RoutedEventArgs e)
         {
-            MSG1.openfile = true;
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "All supported format (*.PM1;*.BF;*.BMD)|*.PM1;*.BF;*.BMD|All files|*.*";
+            ofd.Filter = "All files|*.*";
             if (ofd.ShowDialog() == true)
             {
-                MSG1.msg.Clear();
                 Import_Path = ofd.FileName;
                 Import_FileName = ofd.SafeFileName;
-                MSG1.ParseMSG1(Import_Path);
-                MSG1.UpdateSTRINGs(old_char);
-                this.Title = "Persona Font Editor - [" + Import_FileName + "]";
+                open_file();
             }
+        }
 
+        private void open_file()
+        {
+            MSG1.FM = old_char;
+            MSG1.ParseMSG1(Import_Path, false);
+            MSG1.UpdateString();
+            this.Title = MSG1.SelectIndex >= 0 ? "Persona Font Editor - [" + Import_FileName + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + "]" : "Persona Font Editor - [" + Import_FileName + "]";
         }
 
         private void mi_saveproject_click(object sender, RoutedEventArgs e)
@@ -170,8 +163,6 @@ namespace PersonaText
 
         private void CharSet_old(object sender, RoutedEventArgs e)
         {
-            this.Visibility = Visibility.Hidden;
-
             try
             {
                 CharSet CS = new CharSet();
@@ -180,15 +171,14 @@ namespace PersonaText
                 if (CS.ShowDialog() == true)
                 {
                     Text.WriteFNMP(@"OLD.TXT", ref old_char);
-                    MSG1.UpdateSTRINGs(old_char);
+                    MSG1.FM = old_char;
+                    MSG1.UpdateString();
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
             }
-
-            this.Visibility = Visibility.Visible;
         }
 
         private void CharSet_new(object sender, RoutedEventArgs e)
@@ -227,9 +217,9 @@ namespace PersonaText
         private void mm_tools_export_Click(object sender, RoutedEventArgs e)
         {
             Tool_Export TE = new PersonaText.Tool_Export();
-            TE.old_char = old_char;
+            TE.OVE.MSG1.FM = old_char;
             TE.Owner = this;
-            this.Visibility = Visibility.Hidden;
+            this.Visibility = Visibility.Collapsed;
             TE.ShowDialog();
             this.Visibility = Visibility.Visible;
         }
@@ -240,6 +230,54 @@ namespace PersonaText
             TV.Owner = this;
             TV.CharList = old_char;
             TV.ShowDialog();
+        }
+
+        private void MW_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (Import_Path != "")
+            {
+                MSG1.openfile = true;
+                FileInfo FI = new FileInfo(Import_Path);
+                Import_FileName = FI.Name;
+                open_file();
+            }
+        }
+    }
+
+    public class ObservableVariableMainWindow : INotifyPropertyChanged
+    {
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void Notify(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion INotifyPropertyChanged implementation
+
+
+
+    }
+
+    public class CharacterIndexConverter : IMultiValueConverter
+    {
+        public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            int Index = (int)value[0];
+            MainWindow MW = (MainWindow)value[1];
+            if (MW.MSG1.name.Count > Index)
+            {
+                return MW.MSG1.name[Index].Old_Name;
+            }
+            else { return "<NO_NAME>"; }
+        }
+
+        public object[] ConvertBack(object value, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

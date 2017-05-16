@@ -5,7 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PersonaText"
         mc:Ignorable="d"
-        Title="Persona Text Editor" Height="440.755" Width="803.431">
+        
+        Title="Persona Text Editor" Height="440.755" Width="803.431" WindowStartupLocation="CenterScreen" Loaded="MW_Loaded">
+    <Window.Resources>
+        <local:CharacterIndexConverter x:Key="MyConverter"/>
+    </Window.Resources>
 
     <Grid>
         <Grid.Background>
@@ -20,13 +24,13 @@
         <Menu Grid.Row="0" x:Name="mainmenu">
             <MenuItem Header="File">
                 <MenuItem Header="Open Project" IsEnabled="False" Name="mm_openproject" Click="mi_openproject_Click" ></MenuItem>
-                <MenuItem Header="Save Project" IsEnabled="False"  Name="mm_saveproject" Click="mi_saveproject_click" ><!--IsEnabled="{Binding openfile}"--></MenuItem>
+                <MenuItem Header="Save Project" IsEnabled="False"  Name="mm_saveproject" Click="mi_saveproject_click" ></MenuItem>
                 <Separator></Separator>
                 <MenuItem Header="Import" Name="mi_import" Click="mi_import_click"></MenuItem>
             </MenuItem>
             <MenuItem Header="Tools">
-                <MenuItem Header="Export text from..." Name="mm_tools_export" Click="mm_tools_export_Click"></MenuItem>
-                <MenuItem Header="Text Visualizer" Name="mm_tools_visual" Click="mm_tools_visual_Click"></MenuItem>
+                <MenuItem Header="Extract text from..." Name="mm_tools_export" Click="mm_tools_export_Click"></MenuItem>
+                <MenuItem Header="Text Visualizer" Name="mm_tools_visual" Click="mm_tools_visual_Click" IsEnabled="False"></MenuItem>
             </MenuItem>
         </Menu>
 
@@ -52,33 +56,99 @@
         </Grid>
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                </Grid.RowDefinitions>
 
-            <ItemsControl Name="IC_MSG" ItemsSource="{Binding msg}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel>
-                            <Label  Content="{Binding Path=Name}" HorizontalContentAlignment="Center"></Label>
 
-                            <ItemsControl ItemsSource="{Binding Path=Strings}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition></ColumnDefinition>
-                                                <ColumnDefinition></ColumnDefinition>
-                                            </Grid.ColumnDefinitions>
+                <ItemsControl Grid.Row="0" Name="IC_NAME" ItemsSource="{Binding name}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition></ColumnDefinition>
+                                    <ColumnDefinition></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
 
-                                            <TextBox Margin="2" Grid.Column="0" TextWrapping="Wrap" IsReadOnly="True" Text="{Binding Path=mystr_old, Mode=OneWay}" ></TextBox>
-                                            <TextBox AcceptsReturn="True" Margin="2" Grid.Column="1"  TextWrapping="Wrap" Text="{Binding Path=mystr_new, Mode=TwoWay}" ></TextBox>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                <Grid Grid.Column="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
 
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                                    <TextBlock VerticalAlignment="Center" Grid.Column="0" Text="Name № " Margin="2,0,0,0"/>
+                                    <TextBlock VerticalAlignment="Center" Grid.Column="1" Text="{Binding Path=Index, Mode=OneWay}"/>
+                                    <TextBlock VerticalAlignment="Center" Grid.Column="2" Text=":"/>
+                                    <TextBox Grid.Column="3" Margin="2" TextWrapping="Wrap" Text="{Binding Path=Old_Name, Mode=OneWay}" IsReadOnly="True" />
+                                </Grid>
+
+                                <TextBox Grid.Column="1" Margin="2" TextWrapping="Wrap" Text="{Binding Path=New_Name, Mode=TwoWay}" AcceptsReturn="True" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl Grid.Row="1" Name="IC_MSG" ItemsSource="{Binding msg}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Label Content="{Binding Path=Name}" HorizontalContentAlignment="Center" FontWeight="Bold"/>
+                                    <Label Content=":" HorizontalContentAlignment="Center" FontWeight="Bold"/>
+                                    <Label HorizontalContentAlignment="Center" FontWeight="Bold">
+                                        <MultiBinding Converter="{StaticResource MyConverter}">
+                                            <MultiBinding.Bindings>
+                                                <Binding Path="Character_Index"></Binding>
+                                                <Binding>
+                                                    <Binding.RelativeSource>
+                                                        <RelativeSource Mode="FindAncestor" AncestorType="{x:Type Window}"></RelativeSource>
+                                                    </Binding.RelativeSource>
+                                                </Binding>
+                                            </MultiBinding.Bindings>
+                                        </MultiBinding>
+                                    </Label>
+                                </StackPanel>
+
+                                <ItemsControl ItemsSource="{Binding Path=Strings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <Separator ></Separator>
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition></ColumnDefinition>
+                                                        <ColumnDefinition></ColumnDefinition>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"></RowDefinition>
+                                                        <RowDefinition Height="Auto"></RowDefinition>
+                                                        <RowDefinition Height="Auto"></RowDefinition>
+                                                    </Grid.RowDefinitions>
+
+                                                    <Label Grid.Row="0" Grid.ColumnSpan="2" Content="{Binding Path=Prefix}" HorizontalContentAlignment="Center"></Label>
+                                                    <TextBox Grid.Row="1" Grid.Column="0" Margin="2"  TextWrapping="Wrap" IsReadOnly="True" Text="{Binding Path=Old_string, Mode=OneWay}" ></TextBox>
+                                                    <TextBox Grid.Row="1" Grid.Column="1"  AcceptsReturn="True" Margin="2"  TextWrapping="Wrap" Text="{Binding Path=New_string, Mode=TwoWay}" ></TextBox>
+                                                    <Label Grid.Row="2" Grid.ColumnSpan="2" Content="{Binding Path=Postfix}" HorizontalContentAlignment="Center"></Label>
+                                                </Grid>
+
+                                                <Separator ></Separator>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+
+
 
         </ScrollViewer>
 
