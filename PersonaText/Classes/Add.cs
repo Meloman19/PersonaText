@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
@@ -576,7 +577,7 @@ namespace PersonaText
             SW.WriteLine();
             foreach (var MSG in msg)
             {
-                SW.Write(MSG.Name + ":");
+                SW.Write(MSG.Name + " : ");
                 List<name> Name = name.ToList();
 
                 if (Name.Exists(x => x.Index == MSG.Character_Index))
@@ -585,12 +586,16 @@ namespace PersonaText
                     SW.WriteLine(Name_i.Old_Name);
                 }
                 else { SW.WriteLine("<NO_NAME>"); }
-
+                SW.WriteLine();
                 foreach (var STR in MSG.Strings)
                 {
-                    SW.WriteLine(STR.Old_string);
+                    string[] str = Regex.Split(STR.Old_string, "\r\n|\r|\n");
+                    foreach(var S in str)
+                    {
+                        SW.WriteLine(S);
+                    }
+                    SW.WriteLine();
                 }
-                SW.WriteLine("");
             }
 
             SW.Close();
