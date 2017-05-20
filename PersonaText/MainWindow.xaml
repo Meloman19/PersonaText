@@ -23,8 +23,8 @@
 
         <Menu Grid.Row="0" x:Name="mainmenu">
             <MenuItem Header="File">
-                <MenuItem Header="Open Project" IsEnabled="False" Name="mm_openproject" Click="mi_openproject_Click" ></MenuItem>
-                <MenuItem Header="Save Project" IsEnabled="False"  Name="mm_saveproject" Click="mi_saveproject_click" ></MenuItem>
+                <MenuItem Header="Open Project" Name="mm_openproject" Click="mi_openproject_Click" ></MenuItem>
+                <MenuItem Header="Save Project" IsEnabled="{Binding openfile}" Name="mm_saveproject" Click="mi_saveproject_click" ></MenuItem>
                 <Separator></Separator>
                 <MenuItem Header="Import" Name="mi_import" Click="mi_import_click"></MenuItem>
             </MenuItem>
@@ -51,11 +51,12 @@
                 <Menu  x:Name="menunew">
                     <MenuItem Header="Open NEW FNT" Name="New_FNT_Open" Click="FNnew"></MenuItem>
                     <MenuItem Header="Set Char" Name="New_Char_Set" Click="CharSet_new"></MenuItem>
+                    <MenuItem Header="Save as MSG1" Name="New_Save" Click="New_Save_Click"></MenuItem>
                 </Menu>
             </Border>
         </Grid>
 
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Name="ScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"></RowDefinition>
@@ -83,10 +84,10 @@
                                     <TextBlock VerticalAlignment="Center" Grid.Column="0" Text="Name № " Margin="2,0,0,0"/>
                                     <TextBlock VerticalAlignment="Center" Grid.Column="1" Text="{Binding Path=Index, Mode=OneWay}"/>
                                     <TextBlock VerticalAlignment="Center" Grid.Column="2" Text=":"/>
-                                    <TextBox Grid.Column="3" Margin="2" TextWrapping="Wrap" Text="{Binding Path=Old_Name, Mode=OneWay}" IsReadOnly="True" />
+                                    <TextBox Grid.Column="3" Margin="2" Text="{Binding Path=Old_Name, Mode=OneWay}" IsReadOnly="True" />
                                 </Grid>
 
-                                <TextBox Grid.Column="1" Margin="2" TextWrapping="Wrap" Text="{Binding Path=New_Name, Mode=TwoWay}" AcceptsReturn="True" />
+                                <TextBox Grid.Column="1" Margin="2" Text="{Binding Path=New_Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -132,7 +133,7 @@
 
                                                     <Label Grid.Row="0" Grid.ColumnSpan="2" Content="{Binding Path=Prefix}" HorizontalContentAlignment="Center"></Label>
                                                     <TextBox Grid.Row="1" Grid.Column="0" Margin="2"  TextWrapping="Wrap" IsReadOnly="True" Text="{Binding Path=Old_string, Mode=OneWay}" ></TextBox>
-                                                    <TextBox Grid.Row="1" Grid.Column="1"  AcceptsReturn="True" Margin="2"  TextWrapping="Wrap" Text="{Binding Path=New_string, Mode=TwoWay}" ></TextBox>
+                                                    <TextBox Grid.Row="1" Grid.Column="1"  AcceptsReturn="True" Margin="2"  TextWrapping="Wrap" Text="{Binding Path=New_string, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ></TextBox>
                                                     <Label Grid.Row="2" Grid.ColumnSpan="2" Content="{Binding Path=Postfix}" HorizontalContentAlignment="Center"></Label>
                                                 </Grid>
 

@@ -6,44 +6,50 @@ using System.Windows.Data;
 using System.IO;
 using Microsoft.Win32;
 using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace PersonaText
 {
+    static class FontMap
+    {
+        public static List<fnmp> old_char = new List<fnmp>();
+        public static List<fnmp> new_char = new List<fnmp>();
+    }
+
     public partial class MainWindow : Window
     {
         public MSG1 MSG1 = new MSG1();
+        ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow();
 
         string Import_FileName = "";
         public string Import_Path = "";
         Text Text = new Text();
 
-        public List<fnmp> old_char = new List<fnmp>();
-        public List<fnmp> new_char = new List<fnmp>();
-
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = MSG1;
+            ScrollViewer.DataContext = MSG1;
+            mainmenu.DataContext = OVMW;
 
             if (File.Exists(@"OLD.TXT"))
             {
-                Text.ReadFNMP(@"OLD.TXT", ref old_char);
+                Text.ReadFNMP(@"OLD.TXT", ref FontMap.old_char);
             }
             if (File.Exists(@"NEW.TXT"))
             {
-                Text.ReadFNMP(@"NEW.TXT", ref new_char);
+                Text.ReadFNMP(@"NEW.TXT", ref FontMap.new_char);
             }
             if (File.Exists(@"OLD.FNT"))
             {
-                Text.ReadFN(@"OLD.FNT", ref old_char);
+                Text.ReadFN(@"OLD.FNT", ref FontMap.old_char);
             }
             if (File.Exists(@"NEW.FNT"))
             {
-                Text.ReadFN(@"NEW.FNT", ref new_char);
+                Text.ReadFN(@"NEW.FNT", ref FontMap.new_char);
             }
 
-            old_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
-            new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
+            FontMap.old_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
+            FontMap.new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
         }
 
         private string[] OpenFiles()
@@ -70,30 +76,48 @@ namespace PersonaText
             if (ofd.ShowDialog() == true)
             {
                 Import_Path = ofd.FileName;
-                Import_FileName = ofd.SafeFileName;
+                Import_FileName = Path.GetFileNameWithoutExtension(Import_Path);
                 open_file();
             }
         }
 
         private void open_file()
         {
-            MSG1.FM = old_char;
+            OVMW.openfile = true;
             MSG1.ParseMSG1(Import_Path, false);
             MSG1.UpdateString();
             this.Title = MSG1.SelectIndex >= 0 ? "Persona Font Editor - [" + Import_FileName + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + "]" : "Persona Font Editor - [" + Import_FileName + "]";
         }
 
+        private void open_project()
+        {
+            OVMW.openfile = true;
+            Project Pr = new Project(Import_Path);
+            Pr.OpenProject();
+            MSG1.msg.Clear();
+            MSG1.name.Clear();
+            foreach (var MSG in Pr.msg)
+            {
+                MSG1.msg.Add(MSG);
+            }
+            foreach (var NAME in Pr.name)
+            {
+                MSG1.name.Add(NAME);
+            }
+            this.Title = "Persona Font Editor - [" + Import_FileName + "]";
+        }
+
         private void mi_saveproject_click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog sfd = new SaveFileDialog();
-            sfd.FileName = Import_FileName.Remove(Import_FileName.Length - 4);
+            sfd.FileName = MSG1.SelectIndex >= 0 ? Import_FileName + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + ".PTP" : Import_FileName + ".PTP";
             sfd.Filter = "Persona Text Project (*.PTP)|*.PTP";
             if (sfd.ShowDialog() == true)
             {
-                string path = sfd.SafeFileName;
-                Project Pr = new Project();
-                Pr.Source_File = Import_Path;
-                Pr.Save_Project(path, MSG1.msg.ToList());
+                Project Pr = new Project(sfd.SafeFileName);
+                Pr.name = MSG1.name.ToList();
+                Pr.msg = MSG1.msg.ToList();
+                Pr.SaveProject();
             }
         }
 
@@ -103,16 +127,22 @@ namespace PersonaText
             ofd.Filter = "Persona Text Project (*.PTP)|*.PTP";
             if (ofd.ShowDialog() == true)
             {
+                OVMW.openfile = true;
                 Import_Path = ofd.FileName;
-                Import_FileName = ofd.SafeFileName;
-                Project Pr = new Project();
-
+                Import_FileName = Path.GetFileNameWithoutExtension(Import_Path);
+                Project Pr = new Project(Import_Path);
+                Pr.OpenProject();
                 MSG1.msg.Clear();
-                List<msg> temp = Pr.Open_Project(Import_Path);
-                foreach (var temp2 in temp)
+                MSG1.name.Clear();
+                foreach (var MSG in Pr.msg)
                 {
-                    MSG1.msg.Add(temp2);
+                    MSG1.msg.Add(MSG);
                 }
+                foreach (var NAME in Pr.name)
+                {
+                    MSG1.name.Add(NAME);
+                }
+
                 this.Title = "Persona Font Editor - [" + Import_FileName + "]";
             }
         }
@@ -134,7 +164,7 @@ namespace PersonaText
                     }
                 }
 
-                Text.ReadFN(path, ref old_char);
+                Text.ReadFN(path, ref FontMap.old_char);
                 File.Copy(path, @"OLD.FNT", true);
             }
         }
@@ -156,7 +186,7 @@ namespace PersonaText
                     }
                 }
 
-                Text.ReadFN(path, ref new_char);
+                Text.ReadFN(path, ref FontMap.new_char);
                 File.Copy(path, @"NEW.FNT", true);
             }
         }
@@ -165,13 +195,11 @@ namespace PersonaText
         {
             try
             {
-                CharSet CS = new CharSet();
+                CharSet CS = new CharSet(FontMap.old_char);
                 CS.Owner = this;
-                CS.chlt = old_char;
                 if (CS.ShowDialog() == true)
                 {
-                    Text.WriteFNMP(@"OLD.TXT", ref old_char);
-                    MSG1.FM = old_char;
+                    Text.WriteFNMP(@"OLD.TXT", ref FontMap.old_char);
                     MSG1.UpdateString();
                 }
             }
@@ -187,12 +215,11 @@ namespace PersonaText
 
             try
             {
-                CharSet CS = new CharSet();
+                CharSet CS = new CharSet(FontMap.new_char);
                 CS.Owner = this;
-                CS.chlt = new_char;
                 if (CS.ShowDialog() == true)
                 {
-                    Text.WriteFNMP(@"NEW.TXT", ref new_char);
+                //    Text.WriteFNMP(@"NEW.TXT", ref new_char);
                 }
             }
             catch (Exception ex)
@@ -217,7 +244,6 @@ namespace PersonaText
         private void mm_tools_export_Click(object sender, RoutedEventArgs e)
         {
             Tool_Export TE = new PersonaText.Tool_Export();
-            TE.OVE.MSG1.FM = old_char;
             TE.Owner = this;
             this.Visibility = Visibility.Collapsed;
             TE.ShowDialog();
@@ -228,7 +254,7 @@ namespace PersonaText
         {
             Tool_Visual TV = new Tool_Visual();
             TV.Owner = this;
-            TV.CharList = old_char;
+            TV.CharList = FontMap.old_char;
             TV.ShowDialog();
         }
 
@@ -236,12 +262,30 @@ namespace PersonaText
         {
             if (Import_Path != "")
             {
-                MSG1.openfile = true;
-                FileInfo FI = new FileInfo(Import_Path);
-                Import_FileName = FI.Name;
-                open_file();
+                if (File.Exists(Import_Path))
+                {
+                    OVMW.openfile = true;
+                    FileInfo FI = new FileInfo(Import_Path);
+                    if (FI.Extension == ".PTP")
+                    {
+                        open_project();
+                    }
+                    else
+                    {
+                        open_file();
+                    }
+                }
             }
         }
+
+        private void New_Save_Click(object sender, RoutedEventArgs e)
+        {
+            if (Import_Path != "")
+            {
+                MSG1.SaveAsNewMSG1(Import_Path);
+            }
+        }
+
     }
 
     public class ObservableVariableMainWindow : INotifyPropertyChanged
@@ -258,8 +302,19 @@ namespace PersonaText
         }
         #endregion INotifyPropertyChanged implementation
 
-
-
+        private bool _openfile = false;
+        public bool openfile
+        {
+            get { return _openfile; }
+            set
+            {
+                if (value != _openfile)
+                {
+                    _openfile = value;
+                    Notify("openfile");
+                }
+            }
+        }
     }
 
     public class CharacterIndexConverter : IMultiValueConverter

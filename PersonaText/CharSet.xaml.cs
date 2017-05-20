@@ -19,18 +19,24 @@ namespace PersonaText
     public partial class CharSet : Window
     {
         Text Text = new Text();
-
-        public List<fnmp> chlt = new List<fnmp>();
-        public ObservableCollection<fnmp> _CharList = new ObservableCollection<fnmp>();
+        private List<fnmp> chlt = new List<fnmp>();
+        private ObservableCollection<fnmp> _CharList = new ObservableCollection<fnmp>();
         public ObservableCollection<fnmp> CharList
         {
             get { return _CharList; }
             set { _CharList = value; }
         }
 
-        public CharSet()
+        public CharSet(List<fnmp> CharL)
         {
+            chlt = CharL;
             InitializeComponent();
+            DataContext = this;
+
+            foreach (var CL in CharL)
+            {
+                CharList.Add(new fnmp { Index = CL.Index, Image = CL.Image, Char = CL.Char });
+            }
         }
 
         private void save()
@@ -48,16 +54,6 @@ namespace PersonaText
         {
             save();
             this.Close();
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            foreach (var CL in chlt)
-            {
-                CharList.Add(new fnmp { Index = CL.Index, Image = CL.Image, Char = CL.Char });
-            }
-
-            DataContext = this;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

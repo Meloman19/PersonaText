@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PersonaText"
         mc:Ignorable="d"
-       Title="Tool Extract" Height="Auto" Width="Auto" WindowStyle="ToolWindow" WindowStartupLocation="CenterScreen" Closing="Window_Closing" SizeToContent="WidthAndHeight" d:DesignWidth="510.333" d:DesignHeight="196.666">
+       Title="Tool Extract" Height="Auto" Width="Auto" WindowStyle="ToolWindow" WindowStartupLocation="CenterScreen" Closing="Window_Closing" SizeToContent="WidthAndHeight" d:DesignWidth="611" d:DesignHeight="233.333" ResizeMode="NoResize">
     <Grid Name="GRID">
         <Grid Name="Grid1">
             <Grid.ColumnDefinitions>

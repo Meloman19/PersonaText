@@ -47,7 +47,7 @@ namespace PersonaText
                     return;
                 }
 
-                if (OVP.MSG1Position.Count <= 1)
+                if (OVP.MSG1Position.Count == 1)
                 {
                     MS = OVP.MSG1.GetMSG1fromFile(OVP.FileName, OVP.MSG1Position[0]);
                     this.Close();
@@ -62,6 +62,11 @@ namespace PersonaText
                     listBox.SetBinding(ListBox.ItemsSourceProperty, bind);
                     Grid2.Height = 100;
                     Grid2.Width = 200;
+                }
+                else
+                {
+                    this.Close();
+                    return;
                 }
             }
         }
