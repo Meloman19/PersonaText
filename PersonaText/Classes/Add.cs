@@ -12,6 +12,118 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
+    public static class StreamExtension
+    {
+        public static void WriteInt(this Stream Stream, int Number)
+        {
+            try
+            {
+                byte[] buffer = BitConverter.GetBytes(Number);
+                if (BitConverter.IsLittleEndian)
+                {
+                    Stream.Write(buffer, 0, 4);
+                }
+                else
+                {
+                    buffer = buffer.Reverse().ToArray();
+                    Stream.Write(buffer, 0, 4);
+                }
+
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        public static void WriteUshort(this Stream Stream, int Number)
+        {
+            Stream.WriteUshort((ushort)Number);
+        }
+
+        public static void WriteUshort(this Stream Stream, ushort Number)
+        {
+            try
+            {
+                byte[] buffer = BitConverter.GetBytes(Number);
+                if (BitConverter.IsLittleEndian)
+                {
+                    Stream.Write(buffer, 0, 2);
+                }
+                else
+                {
+                    buffer = buffer.Reverse().ToArray();
+                    Stream.Write(buffer, 0, 2);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        public static void WriteString(this Stream Stream, string String, int Length)
+        {
+            try
+            {
+                byte[] buffer = System.Text.Encoding.ASCII.GetBytes(String);
+                Stream.Write(buffer, 0, buffer.Length);
+                for (int i = 0; i < Length - String.Length; i++)
+                {
+                    Stream.WriteByte(0);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        public static int ReadInt(this Stream Stream)
+        {
+            byte[] buffer = new byte[4];
+            try
+            {
+                Stream.Read(buffer, 0, 4);
+                if (BitConverter.IsLittleEndian)
+                {
+                    return BitConverter.ToInt32(buffer, 0);
+                }
+                else
+                {
+                    return BitConverter.ToInt32(buffer.Reverse().ToArray(), 0);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return 0;
+            }
+        }
+
+        public static ushort ReadUshort(this Stream Stream)
+        {
+            byte[] buffer = new byte[2];
+            try
+            {
+                Stream.Read(buffer, 0, 2);
+                if (BitConverter.IsLittleEndian)
+                {
+                    return BitConverter.ToUInt16(buffer, 0);
+                }
+                else
+                {
+                    return BitConverter.ToUInt16(buffer.Reverse().ToArray(), 0);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return 0;
+            }
+        }
+    }
+
     public class MSG1 : INotifyPropertyChanged
     {
         #region INotifyPropertyChanged implementation
@@ -160,13 +272,13 @@ namespace PersonaText
             {
                 FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
                 fs.Position = 0x20;
-                while (Text.ReadByteStream(ref fs, 4) != 6)
+                while (fs.ReadInt() != 6)
                 {
                     fs.Position = fs.Position + 12;
                 }
-                int MSG1_Size = Text.ReadByteStream(ref fs, 4);
+                int MSG1_Size = fs.ReadInt();
                 fs.Position = fs.Position + 4;
-                int MSG1_Position = Text.ReadByteStream(ref fs, 4);
+                int MSG1_Position = fs.ReadInt();
 
                 byte[] buffer = new byte[MSG1_Size];
                 fs.Position = MSG1_Position;
@@ -191,13 +303,13 @@ namespace PersonaText
             {
                 FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
                 fs.Position = 0x20;
-                while (Text.ReadByteStream(ref fs, 4) != 3)
+                while (fs.ReadInt() != 3)
                 {
                     fs.Position = fs.Position + 12;
                 }
                 fs.Position = fs.Position + 4;
-                int MSG1_Size = Text.ReadByteStream(ref fs, 4);
-                int MSG1_Position = Text.ReadByteStream(ref fs, 4);
+                int MSG1_Size = fs.ReadInt();
+                int MSG1_Position = fs.ReadInt();
 
                 byte[] buffer = new byte[MSG1_Size];
                 fs.Position = MSG1_Position;
@@ -221,7 +333,7 @@ namespace PersonaText
                 FileStream FS = new FileStream(FileName, FileMode.Open, FileAccess.Read);
 
                 FS.Position = Position + 4;
-                int Size = Text.ReadByteStream(ref FS, 4);
+                int Size = FS.ReadInt();
                 FS.Position = Position;
                 byte[] buffer = new byte[Size];
                 FS.Read(buffer, 0, Size);
@@ -244,25 +356,25 @@ namespace PersonaText
 
                 int MSG_PointBlock_Pos = 0x20;
                 ms.Position = 24;
-                int MSG_count = Text.ReadByteStream(ref ms, 4);
+                int MSG_count = ms.ReadInt();
                 ms.Position = MSG_PointBlock_Pos;
                 List<int[]> MSG_Position = new List<int[]>();
 
                 for (int i = 0; i < MSG_count; i++)
                 {
                     int[] temp = new int[2];
-                    temp[0] = Text.ReadByteStream(ref ms, 4);
-                    temp[1] = Text.ReadByteStream(ref ms, 4);
+                    temp[0] = ms.ReadInt();
+                    temp[1] = ms.ReadInt();
                     MSG_Position.Add(temp);
                 }
 
-                int Name_Block_Position = Text.ReadByteStream(ref ms, 4);
-                int Name_Count = Text.ReadByteStream(ref ms, 4);
+                int Name_Block_Position = ms.ReadInt();
+                int Name_Count = ms.ReadInt();
                 ms.Position = Name_Block_Position + MSG_PointBlock_Pos;
                 List<long> Name_Position = new List<long>();
                 for (int i = 0; i < Name_Count; i++)
                 {
-                    Name_Position.Add(Text.ReadByteStream(ref ms, 4));
+                    Name_Position.Add(ms.ReadInt());
                 }
 
                 name.Clear();
@@ -302,11 +414,11 @@ namespace PersonaText
                     if (pos[0] == 0)
                     {
                         Type = "MSG";
-                        int count = Text.ReadByteStream(ref ms, 2);
-                        Character_Index = Text.ReadByteStream(ref ms, 2);
+                        int count = ms.ReadUshort();
+                        Character_Index = ms.ReadUshort();
                         ms.Position = ms.Position + 4 * count;
 
-                        int size = Text.ReadByteStream(ref ms, 4);
+                        int size = ms.ReadInt();
 
                         MSG_bytes = new byte[size];
                         ms.Read(MSG_bytes, 0, size);
@@ -315,10 +427,10 @@ namespace PersonaText
                     {
                         Type = "SEL";
                         ms.Position = ms.Position + 2;
-                        int count = Text.ReadByteStream(ref ms, 2);
+                        int count = ms.ReadUshort();
                         ms.Position = ms.Position + 4 * count + 4;
 
-                        int size = Text.ReadByteStream(ref ms, 4);
+                        int size = ms.ReadInt();
 
                         MSG_bytes = new byte[size];
                         ms.Read(MSG_bytes, 0, size);
@@ -585,12 +697,18 @@ namespace PersonaText
                     name Name_i = Name.Find(x => x.Index == MSG.Character_Index);
                     SW.WriteLine(Name_i.Old_Name);
                 }
+                else if (MSG.Type == "SEL")
+                {
+                    SW.WriteLine("<SELECT>");
+                }
                 else { SW.WriteLine("<NO_NAME>"); }
+
                 SW.WriteLine();
+
                 foreach (var STR in MSG.Strings)
                 {
                     string[] str = Regex.Split(STR.Old_string, "\r\n|\r|\n");
-                    foreach(var S in str)
+                    foreach (var S in str)
                     {
                         SW.WriteLine(S);
                     }
@@ -625,49 +743,49 @@ namespace PersonaText
                 List<int> NAME_pos = new List<int>();
                 List<int> LastBlock = new List<int>();
 
-                Text.WriteIntStream(ref FS, 0x7);
-                Text.WriteIntStream(ref FS, 0x0);
-                Text.WriteStringStream(ref FS, "MSG1", 8);
-                Text.WriteIntStream(ref FS, 0x0);
-                Text.WriteIntStream(ref FS, 0x0);
-                Text.WriteIntStream(ref FS, msg.Count);
-                Text.WriteIntStream(ref FS, 0x20000);
+                FS.WriteInt(0x7);
+                FS.WriteInt(0x0);
+                FS.WriteString("MSG1", 8);
+                FS.WriteInt(0x0);
+                FS.WriteInt(0x0);
+                FS.WriteInt(msg.Count);
+                FS.WriteInt(0x20000);
 
                 foreach (var MSG in msg)
                 {
-                    if (MSG.Type == "MSG") { Text.WriteIntStream(ref FS, 0x0); }
-                    else if (MSG.Type == "SEL") { Text.WriteIntStream(ref FS, 0x1); }
+                    if (MSG.Type == "MSG") { FS.WriteInt(0x0); }
+                    else if (MSG.Type == "SEL") { FS.WriteInt(0x1); }
                     else { MessageBox.Show("SaveMSG1 Error"); }
 
                     LastBlock.Add((int)FS.Position);
-                    Text.WriteIntStream(ref FS, 0x0);
+                    FS.WriteInt(0x0);
                 }
 
                 LastBlock.Add((int)FS.Position);
-                Text.WriteIntStream(ref FS, 0x0);
-                Text.WriteIntStream(ref FS, name.Count);
-                Text.WriteIntStream(ref FS, 0x0);
-                Text.WriteIntStream(ref FS, 0x0);
+                FS.WriteInt(0x0);
+                FS.WriteInt(name.Count);
+                FS.WriteInt(0x0);
+                FS.WriteInt(0x0);
 
                 foreach (var MSG in msg)
                 {
                     List<int> MSG_o = new List<int>();
                     MSG_o.Add((int)FS.Position);
 
-                    Text.WriteStringStream(ref FS, MSG.Name, 24);
+                    FS.WriteString(MSG.Name, 24);
 
                     if (MSG.Type == "MSG")
                     {
-                        Text.WriteShortStream(ref FS, (ushort)MSG.Strings.Count);
+                        FS.WriteUshort(MSG.Strings.Count);
 
-                        if (MSG.Character_Index == -1) { Text.WriteShortStream(ref FS, 0xFFFF); }
-                        else { Text.WriteShortStream(ref FS, (ushort)MSG.Character_Index); }
+                        if (MSG.Character_Index == -1) { FS.WriteUshort(0xFFFF); }
+                        else { FS.WriteUshort(MSG.Character_Index); }
                     }
                     else if (MSG.Type == "SEL")
                     {
-                        Text.WriteShortStream(ref FS, 0);
-                        Text.WriteShortStream(ref FS, (ushort)MSG.Strings.Count);
-                        Text.WriteIntStream(ref FS, 0x0);
+                        FS.WriteUshort(0);
+                        FS.WriteUshort((ushort)MSG.Strings.Count);
+                        FS.WriteInt(0x0);
                     }
 
                     int Size = 0;
@@ -675,7 +793,7 @@ namespace PersonaText
                     foreach (var String in MSG.Strings)
                     {
                         LastBlock.Add((int)FS.Position);
-                        Text.WriteIntStream(ref FS, 0x0);
+                        FS.WriteInt(0x0);
                         foreach (var Str in String.Prefix_bytes)
                         {
                             Size = Size + Str.Bytes.Length;
@@ -691,7 +809,7 @@ namespace PersonaText
                     }
                     MSG_o.Add(Size);
 
-                    Text.WriteIntStream(ref FS, 0x0);
+                    FS.WriteInt(0x0);
 
                     foreach (var String in MSG.Strings)
                     {
@@ -726,9 +844,9 @@ namespace PersonaText
                 for (int i = 0; i < msg.Count; i++)
                 {
                     FS.Position += 4;
-                    Text.WriteIntStream(ref FS, MSG_pos[i][0] - 0x20);
+                    FS.WriteInt(MSG_pos[i][0] - 0x20);
                 }
-                Text.WriteIntStream(ref FS, (int)Name_Block_pos - 0x20);
+                FS.WriteInt((int)Name_Block_pos - 0x20);
                 for (int i = 0; i < msg.Count; i++)
                 {
                     FS.Position = MSG_pos[i][0];
@@ -745,9 +863,9 @@ namespace PersonaText
 
                     for (int k = 0; k < msg[i].Strings.Count; k++)
                     {
-                        Text.WriteIntStream(ref FS, MSG_pos[i][k + 2] - 0x20);
+                        FS.WriteInt(MSG_pos[i][k + 2] - 0x20);
                     }
-                    Text.WriteIntStream(ref FS, MSG_pos[i][1]);
+                    FS.WriteInt(MSG_pos[i][1]);
                 }
 
 
@@ -755,7 +873,7 @@ namespace PersonaText
                 foreach (var NAME in name)
                 {
                     LastBlock.Add((int)FS.Position);
-                    Text.WriteIntStream(ref FS, 0);
+                    FS.WriteInt(0);
                 }
                 foreach (var NAME in name)
                 {
@@ -766,7 +884,7 @@ namespace PersonaText
                 FS.Position = Name_Block_pos;
                 for (int i = 0; i < name.Count; i++)
                 {
-                    Text.WriteIntStream(ref FS, NAME_pos[i] - 0x20);
+                    FS.WriteInt(NAME_pos[i] - 0x20);
                 }
                 FS.Position = FS.Length;
                 while (FS.Length % 4 != 0)
@@ -779,11 +897,11 @@ namespace PersonaText
                 FS.Write(LastBlockBytes, 0, LastBlockBytes.Length);
 
                 FS.Position = 0x10;
-                Text.WriteIntStream(ref FS, LastBlockPos);
-                Text.WriteIntStream(ref FS, LastBlockBytes.Length);
+                FS.WriteInt(LastBlockPos);
+                FS.WriteInt(LastBlockBytes.Length);
 
                 FS.Position = 0x4;
-                Text.WriteIntStream(ref FS, (int)FS.Length);
+                FS.WriteInt((int)FS.Length);
 
                 FS.Close();
             }
@@ -860,15 +978,20 @@ namespace PersonaText
             sum += reloc;
         }
 
-        private struct Address
-        {
-            public int Index;
-            public int Number;
-        }
     }
 
     public class Text
     {
+        public void ReadShift(ref List<glyphYshift> List)
+        {
+            List.Add(new glyphYshift { Index = 81, Shift =2 });
+            List.Add(new glyphYshift { Index = 103, Shift = 2 });
+            List.Add(new glyphYshift { Index = 106, Shift = 2 });
+            List.Add(new glyphYshift { Index = 112, Shift = 2 });
+            List.Add(new glyphYshift { Index = 113, Shift = 2 });
+            List.Add(new glyphYshift { Index = 121, Shift = 2 });
+        }
+
         public void ReadFNMP(string FileName, ref List<fnmp> List)
         {
             try
@@ -934,23 +1057,23 @@ namespace PersonaText
                 FileStream FONT = new FileStream(Path, FileMode.Open, FileAccess.Read);
                 MemoryStream FontDec = new MemoryStream();
 
-                int MainHeaderSize = ReadByteStream(ref FONT, 4);
+                int MainHeaderSize = FONT.ReadInt();
                 FONT.Position = 0xE;
-                int TotalNumberOfGlyphs = ReadByteStream(ref FONT, 2);
+                int TotalNumberOfGlyphs = FONT.ReadUshort();
                 int GlyphCutTable_Pos = MainHeaderSize + 64 + 4;
                 FONT.Position = GlyphCutTable_Pos - 4;
-                int GlyphCutTable_Size = ReadByteStream(ref FONT, 4);
+                int GlyphCutTable_Size = FONT.ReadInt();
 
                 int DictionaryHeader_Pos = GlyphCutTable_Pos + GlyphCutTable_Size + TotalNumberOfGlyphs * 4 + 4;
 
                 FONT.Position = DictionaryHeader_Pos;
-                int DictionaryHeader_Size = ReadByteStream(ref FONT, 4);
-                int Dictionary_Size = ReadByteStream(ref FONT, 4);
-                int CompressedFontBlock_Size = ReadByteStream(ref FONT, 4);
+                int DictionaryHeader_Size = FONT.ReadInt();
+                int Dictionary_Size = FONT.ReadInt();
+                int CompressedFontBlock_Size = FONT.ReadInt();
                 int Dictionary_Pos = DictionaryHeader_Pos + DictionaryHeader_Size;
 
                 FONT.Position = DictionaryHeader_Pos + 24;
-                int GlyphPositionTable_Size = ReadByteStream(ref FONT, 4);
+                int GlyphPositionTable_Size = FONT.ReadInt();
 
                 FONT.Position = Dictionary_Pos;
 
@@ -958,8 +1081,8 @@ namespace PersonaText
                 for (int i = 0; i < Dictionary_Size / 6; i++)
                 {
                     FONT.Position = FONT.Position + 2;
-                    Dictionary[i, 0] = ReadByteStream(ref FONT, 2);
-                    Dictionary[i, 1] = ReadByteStream(ref FONT, 2);
+                    Dictionary[i, 0] = FONT.ReadUshort();
+                    Dictionary[i, 1] = FONT.ReadUshort();
                 }
 
                 int CompressedFontBlock_Pos = Dictionary_Pos + Dictionary_Size + GlyphPositionTable_Size;
@@ -976,7 +1099,7 @@ namespace PersonaText
                     }
                     else
                     {
-                        int s4 = ReadByteStream(ref FONT, 2);
+                        int s4 = FONT.ReadUshort();
                         for (int i = 0; i < 16; i++)
                         {
                             temp = Dictionary[temp, s4 % 2];
@@ -1002,7 +1125,7 @@ namespace PersonaText
                     byte g = (byte)FONT.ReadByte();
                     byte b = (byte)FONT.ReadByte();
                     byte a = (byte)FONT.ReadByte();
-                    ColorBMP.Add(Color.FromArgb(0xFF, r, g, b));
+                    ColorBMP.Add(Color.FromArgb(a, r, g, b));
                 }
                 BitmapPalette ColorPaletteBMP = new BitmapPalette(ColorBMP);
 
@@ -1016,9 +1139,9 @@ namespace PersonaText
                     GlyphCut[i, 1] = (byte)FONT.ReadByte();
                 }
 
-
                 int k = 32;
-                for (int i = 0; i < TotalNumberOfGlyphs; i++)
+
+                try
                 {
                     byte[] data = new byte[512];
                     FontDec.Read(data, 0, 512);
@@ -1028,12 +1151,39 @@ namespace PersonaText
                     if (List.Exists(x => x.Index == k))
                     {
                         fnmp fnmp = List.Find(x => x.Index == k);
+                        fnmp.Cut = new MyByte { Left = Convert.ToByte(GlyphCut[0, 0] + 5), Right = Convert.ToByte(GlyphCut[0, 1] -5) };
                         fnmp.Image = BMP;
-                        fnmp.Cut = new PersonaText.MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] };
+                        fnmp.Image_data = data;
                     }
                     else
                     {
-                        List.Add(new PersonaText.fnmp { Index = k, Image = BMP, Char = "", Cut = new PersonaText.MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] } });
+                        List.Add(new fnmp { Index = k, Char = "", Cut = new MyByte { Left = Convert.ToByte(GlyphCut[0, 0] + 5), Right = Convert.ToByte(GlyphCut[0, 1] - 5) }, Image = BMP, Image_data = data });
+                    }
+
+                    k++;
+                }
+                catch
+                {
+
+                }
+
+                for (int i = 1; i < TotalNumberOfGlyphs; i++)
+                {
+                    byte[] data = new byte[512];
+                    FontDec.Read(data, 0, 512);
+
+                    BitmapSource BMP = BitmapSource.Create(32, 32, 96, 96, PixelFormats.Indexed4, ColorPaletteBMP, data, 16);
+
+                    if (List.Exists(x => x.Index == k))
+                    {
+                        fnmp fnmp = List.Find(x => x.Index == k);
+                        fnmp.Cut = new MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] };
+                        fnmp.Image = BMP;
+                        fnmp.Image_data = data;
+                    }
+                    else
+                    {
+                        List.Add(new fnmp { Index = k, Char = "", Cut = new MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] }, Image = BMP, Image_data = data });
                     }
 
                     k++;
@@ -1045,89 +1195,6 @@ namespace PersonaText
             catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
-            }
-        }
-
-        public int ReadByteStream(ref FileStream stream, int count)
-        {
-            byte[] Bytes = new byte[count];
-            try
-            {
-                stream.Read(Bytes, 0, count);
-                Array.Reverse(Bytes);
-                string str = "";
-                for (int i = 0; i < count; i++)
-                {
-                    str = str + Convert.ToString(Bytes[i], 16).PadLeft(2, '0');
-                }
-                return Convert.ToInt32(str, 16);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                return -1;
-            }
-        }
-
-        public void WriteIntStream(ref FileStream stream, int Number)
-        {
-            try
-            {
-                byte[] buffer = BitConverter.GetBytes(Number);
-                stream.Write(buffer, 0, 4);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-        public void WriteShortStream(ref FileStream stream, ushort Number)
-        {
-            try
-            {
-                byte[] buffer = BitConverter.GetBytes(Number);
-                stream.Write(buffer, 0, 2);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-        public void WriteStringStream(ref FileStream stream, string String, int Length)
-        {
-            try
-            {
-                byte[] buffer = System.Text.Encoding.ASCII.GetBytes(String);
-                stream.Write(buffer, 0, buffer.Length);
-                for (int i = 0; i < Length - String.Length; i++)
-                {
-                    stream.WriteByte(0);
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-
-        public int ReadByteStream(ref MemoryStream stream, int count)
-        {
-            byte[] Bytes = new byte[count];
-            try
-            {
-                stream.Read(Bytes, 0, count);
-                Array.Reverse(Bytes);
-                string str = "";
-                for (int i = 0; i < count; i++)
-                {
-                    str = str + Convert.ToString(Bytes[i], 16).PadLeft(2, '0');
-                }
-                return Convert.ToInt32(str, 16);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                return -1;
             }
         }
 

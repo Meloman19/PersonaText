@@ -1,12 +1,83 @@
 ﻿using System;
+using System.Drawing;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Collections.Specialized;
+using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
+    public static class ObservableCollectionExtentsion
+    {
+        public static void GetBitmapList (this ObservableCollection<BitmapList> List, string Text, ref List<fnmp> CharList, System.Drawing.Color Color)
+        {
+            var split = Regex.Split(Text, "\r\n|\r|\n");
+
+            List.Clear();
+
+            List<System.Windows.Media.Color> ColorBMP = new List<System.Windows.Media.Color>();
+
+            ColorBMP.Add(new System.Windows.Media.Color { A = 0, R = 0, G = 0, B = 0 });
+            for (int i = 1; i < 16; i++)
+            {
+                ColorBMP.Add(new System.Windows.Media.Color
+                {
+                    A = trunc(i * 0x10),
+                    R = Color.R,
+                    G = Color.G,
+                    B = Color.B
+                });
+            }
+            BitmapPalette ColorPaletteBMP = new BitmapPalette(ColorBMP);
+
+            for (int i = 0; i < split.Length; i++)
+            {
+                int linewidth = 0;
+                for (int k = 0; k < split[i].Length; k++)
+                {
+                    string Char = split[i][k].ToString();
+                    fnmp fnmp = CharList.Find(x => x.Char == Char);
+                    if (fnmp != null)
+                    {
+                        BitmapSource BS = BitmapSource.Create(32, 32, 96, 96, PixelFormats.Indexed4, ColorPaletteBMP, fnmp.Image_data, 16);
+
+                        int x_pos = linewidth - fnmp.Cut.Left;
+                        linewidth += fnmp.Cut.Right - fnmp.Cut.Left - 1;
+                        glyphYshift temp = FontMap.char_shift.Find(x => x.Index == fnmp.Index);
+                        int y_pos = temp != null ? 25 * i + temp.Shift : 25 * i;
+
+                        List.Add(new BitmapList { Bitmap = BS, posX = x_pos, posY = y_pos });
+                    }
+                }
+            }
+        }
+
+        private static byte trunc(int value)
+        {
+            if (value < 0) { return 0; }
+            else if (value > 255) { return 255; }
+            else { return (byte)value; }
+        }
+
+    }
+
+    public class BitmapList
+    {
+        public BitmapSource Bitmap { get; set; }
+        public double posX { get; set; }
+        public double posY { get; set; }
+    }
+
+    public class glyphYshift
+    {
+        public int Index { get; set; }
+        public byte Shift { get; set; }
+    }
+
     public class MyByte : INotifyPropertyChanged
     {
         #region INotifyPropertyChanged implementation
@@ -55,6 +126,23 @@ namespace PersonaText
     {
         #region INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler PropertyChanged;
+
+        private void _Image_Changed()
+        {
+            if (_Cut != null)
+            {
+                if (_Cut.Right - _Cut.Left != 0)
+                {
+                    _Image = new CroppedBitmap(_Image, new Int32Rect(_Cut.Left, 0, _Cut.Right - _Cut.Left, 32));
+                }
+            }
+
+            DrawingVisual DV = new DrawingVisual();
+            DrawingContext DI = DV.RenderOpen();
+
+            DI.DrawImage(_Image, new Rect(new System.Windows.Size(32, 32)));
+            DI.Close();
+        }
 
         protected void Notify(string propertyName)
         {
@@ -105,6 +193,24 @@ namespace PersonaText
             }
         }
 
+        private byte[] _Image_data;
+        public byte[] Image_data
+        {
+            get
+            {
+                return _Image_data;
+            }
+            set
+            {
+                if (value != _Image_data)
+                {
+                    _Image_data = value;
+                    //_Image_Changed();
+                    Notify("Image_data");
+                }
+            }
+        }
+
         private BitmapSource _Image;
         public BitmapSource Image
         {
@@ -117,12 +223,13 @@ namespace PersonaText
                 if (value != _Image)
                 {
                     _Image = value;
+                    //_Image_Changed();
                     Notify("Image");
                 }
             }
         }
 
-        public MyByte _Cut { get; set; }
+        private MyByte _Cut;
         public MyByte Cut
         {
             get
@@ -272,7 +379,6 @@ namespace PersonaText
 
     public class name : INotifyPropertyChanged
     {
-
         private byte[] New_Name_Changed()
         {
             List<byte> returned = new List<byte>();
@@ -380,6 +486,7 @@ namespace PersonaText
                 if (value != _Old_Name_Bytes)
                 {
                     _Old_Name_Bytes = value;
+                    
                     Notify("Name_Source");
                 }
             }
@@ -440,6 +547,19 @@ namespace PersonaText
 
     public class MyString : INotifyPropertyChanged
     {
+
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void Notify(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion INotifyPropertyChanged implementation
+
         public MyString()
         {
             _Prefix_bytes = new ObservableCollection<MyByteArray>();
@@ -452,12 +572,12 @@ namespace PersonaText
 
         private void _Prefix_bytes_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            Prefix = "Prefix: " + BytesToHEXString(ref _Prefix_bytes);
+            Prefix = "Prefix: " + SystemToString(ref _Prefix_bytes);
         }
 
         private void _Postfix_bytes_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            Postfix = "Postfix: " + BytesToHEXString(ref _Postfix_bytes);
+            Postfix = "Postfix: " + SystemToString(ref _Postfix_bytes);
         }
 
         private void _Old_string_bytes_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -488,54 +608,14 @@ namespace PersonaText
                     {
                         if (0x20 <= MSG.Bytes[i] & MSG.Bytes[i] < 0x80)
                         {
-                            if (FontMap.old_char.Exists(x => x.Index == MSG.Bytes[i]))
-                            {
-                                fnmp fnmp = FontMap.old_char.Find(x => x.Index == MSG.Bytes[i]);
-
-                                if (fnmp.Char.Length == 0)
-                                {
-                                    returned = returned + "{!}";
-                                }
-                                else if (fnmp.Char.Length == 1)
-                                {
-                                    returned = returned + fnmp.Char;
-                                }
-                                else
-                                {
-                                    returned = returned + "<" + fnmp.Char + ">";
-                                }
-                            }
-                            else
-                            {
-                                returned = returned + "{!!}";
-                            }
+                            returned += GetChar(FontMap.old_char, MSG.Bytes[i]);
                         }
                         else if (0x80 <= MSG.Bytes[i] & MSG.Bytes[i] < 0xF0)
                         {
-                            int link = (MSG.Bytes[i] - 0x81) * 0x80 + MSG.Bytes[i + 1] + 0x20;
+                            int newindex = (MSG.Bytes[i] - 0x81) * 0x80 + MSG.Bytes[i + 1] + 0x20;
 
                             i++;
-                            if (FontMap.old_char.Exists(x => x.Index == link))
-                            {
-                                fnmp fnmp = FontMap.old_char.Find(x => x.Index == link);
-
-                                if (fnmp.Char.Length == 0)
-                                {
-                                    returned = returned + "{!}";
-                                }
-                                else if (fnmp.Char.Length == 1)
-                                {
-                                    returned = returned + fnmp.Char;
-                                }
-                                else
-                                {
-                                    returned = returned + "<" + fnmp.Char + ">";
-                                }
-                            }
-                            else
-                            {
-                                returned = returned + "{!!}";
-                            }
+                            returned += GetChar(FontMap.old_char, newindex);
                         }
                         else
                         {
@@ -545,11 +625,22 @@ namespace PersonaText
                 }
             }
 
+            VisualOldText.GetBitmapList(returned, ref FontMap.old_char, System.Drawing.Color.White);
+
             Old_string = returned;
+        }
+    
+        private byte trunc(int value)
+        {
+            if (value < 0) { return 0; }
+            else if (value > 255) { return 255; }
+            else { return (byte)value; }
         }
 
         private void _New_string_Changed()
         {
+            VisualNewText.GetBitmapList(_New_string, ref FontMap.new_char, System.Drawing.Color.White);
+
             New_string_bytes.Clear();
             List<byte> LB = new List<byte>();
             string Char = "";
@@ -579,9 +670,9 @@ namespace PersonaText
                     {
                         if (LB.Count > 0)
                         {
-                            string[] str =  System.Text.Encoding.Default.GetString(LB.ToArray()).Split(' ');
+                            string[] str = System.Text.Encoding.Default.GetString(LB.ToArray()).Split(' ');
                             LB.Clear();
-                            foreach(string st in str)
+                            foreach (string st in str)
                             {
                                 LB.Add(Convert.ToByte(st, 16));
                             }
@@ -601,19 +692,8 @@ namespace PersonaText
                     if (C == '>')
                     {
                         Special = false;
-                        fnmp fnmp = FontMap.new_char.Find(x => x.Char == Char);
-                        if (fnmp != null)
-                        {
-                            if (fnmp.Index < 0x80)
-                            {
-                                LB.Add((byte)fnmp.Index);
-                            }
-                            else
-                            {
-                                fnmp = null;
-                            }
-                        }
 
+                        GetIndex(ref LB, Char);
                         Char = "";
                     }
                     else
@@ -639,19 +719,7 @@ namespace PersonaText
                     }
                     else
                     {
-                        Char = C.ToString();
-                        if (Char != "")
-                        {
-                            fnmp fnmp = FontMap.new_char.Find(x => x.Char == Char);
-                            if (fnmp != null)
-                            {
-                                if (fnmp.Index < 0x80)
-                                {
-                                    LB.Add((byte)fnmp.Index);
-                                }
-                            }
-                            Char = "";
-                        }
+                        GetIndex(ref LB, C);
                     }
                 }
 
@@ -664,10 +732,85 @@ namespace PersonaText
             }
         }
 
-        private string BytesToHEXString(ref ObservableCollection<MyByteArray> bytes)
+        private void GetIndex(ref List<byte> ByteList, char Char)
+        {
+            string CharStr = Char.ToString();
+            if (CharStr != "")
+            {
+                fnmp fnmp = FontMap.new_char.Find(x => x.Char == CharStr);
+                if (fnmp != null)
+                {
+                    if (fnmp.Index < 0x80)
+                    {
+                        ByteList.Add((byte)fnmp.Index);
+                    }
+                    else
+                    {
+                        byte byte2 = Convert.ToByte((fnmp.Index - 0x20) % 0x80);
+                        byte byte1 = Convert.ToByte(((fnmp.Index - 0x20 - byte2) / 0x80) + 0x81);
+
+                        ByteList.Add(byte1);
+                        ByteList.Add(byte2);
+                    }
+                }
+            }
+        }
+        private void GetIndex(ref List<byte> ByteList, string CharStr)
+        {
+            if (CharStr != "")
+            {
+                fnmp fnmp = FontMap.new_char.Find(x => x.Char == CharStr);
+                if (fnmp != null)
+                {
+                    if (fnmp.Index < 0x80)
+                    {
+                        ByteList.Add((byte)fnmp.Index);
+                    }
+                    else
+                    {
+                        byte byte2 = Convert.ToByte((fnmp.Index - 0x20) % 0x80);
+                        byte byte1 = Convert.ToByte(((fnmp.Index - 0x20 - byte2) / 0x80) + 0x81);
+
+                        ByteList.Add(byte1);
+                        ByteList.Add(byte2);
+                    }
+                }
+            }
+        }
+
+        private string GetChar(List<fnmp> FontMap, int index)
         {
             string returned = "";
-            foreach (var MSG in bytes)
+
+            if (FontMap.Exists(x => x.Index == index))
+            {
+                fnmp fnmp = FontMap.Find(x => x.Index == index);
+
+                if (fnmp.Char.Length == 0)
+                {
+                    returned += "{C}";
+                }
+                else if (fnmp.Char.Length == 1)
+                {
+                    returned += fnmp.Char;
+                }
+                else
+                {
+                    returned += "<" + fnmp.Char + ">";
+                }
+            }
+            else
+            {
+                returned += "{NC}";
+            }
+
+            return returned;
+        }
+
+        private string SystemToString(ref ObservableCollection<MyByteArray> SystemBytes)
+        {
+            string returned = "";
+            foreach (var MSG in SystemBytes)
             {
                 returned = returned + "{";
                 returned = returned + Convert.ToString(MSG.Bytes[0], 16).PadLeft(2, '0').ToUpper();
@@ -679,18 +822,6 @@ namespace PersonaText
             }
             return returned;
         }
-
-        #region INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void Notify(string propertyName)
-        {
-            if (this.PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
-        #endregion INotifyPropertyChanged implementation
 
         private int _Index = 0;
         public int Index
@@ -754,6 +885,19 @@ namespace PersonaText
             }
         }
 
+        private ObservableCollection<BitmapList> _VisualOldText = new ObservableCollection<BitmapList>();
+        private ObservableCollection<BitmapList> _VisualOldName = new ObservableCollection<BitmapList>();
+        public ObservableCollection<BitmapList> VisualOldText
+        {
+            get { return _VisualOldText; }
+            set { _VisualOldText = value; }
+        }
+        public ObservableCollection<BitmapList> VisualOldName
+        {
+            get { return _VisualOldName; }
+            set { _VisualOldName = value; }
+        }
+
         private ObservableCollection<MyByteArray> _New_string_bytes = new ObservableCollection<MyByteArray>();
         public ObservableCollection<MyByteArray> New_string_bytes
         {
@@ -773,6 +917,19 @@ namespace PersonaText
                     Notify("New_string");
                 }
             }
+        }
+
+        private ObservableCollection<BitmapList> _VisualNewText = new ObservableCollection<BitmapList>();
+        private ObservableCollection<BitmapList> _VisualNewName = new ObservableCollection<BitmapList>();
+        public ObservableCollection<BitmapList> VisualNewText
+        {
+            get { return _VisualNewText; }
+            set { _VisualNewText = value; }
+        }
+        public ObservableCollection<BitmapList> VisualNewName
+        {
+            get { return _VisualNewName; }
+            set { _VisualNewName = value; }
         }
 
         private ObservableCollection<MyByteArray> _Postfix_bytes = new ObservableCollection<MyByteArray>();

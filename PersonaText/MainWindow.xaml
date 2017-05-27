@@ -7,8 +7,14 @@
         mc:Ignorable="d"
         
         Title="Persona Text Editor" Height="440.755" Width="803.431" WindowStartupLocation="CenterScreen" Loaded="MW_Loaded">
+
     <Window.Resources>
         <local:CharacterIndexConverter x:Key="MyConverter"/>
+        <local:ConverterHeigth x:Key="ConverterHeight"/>
+        <local:ConverterWidth x:Key="ConverterWidth"/>
+        <local:ConverterXpos x:Key="ConverterX"/>
+        <local:ConverterYpos x:Key="ConverterY"/>
+        <BitmapImage x:Key="Persona4DialogBack" UriSource="/Resources/Persona4Dialog.png"/>
     </Window.Resources>
 
     <Grid>
@@ -30,7 +36,7 @@
             </MenuItem>
             <MenuItem Header="Tools">
                 <MenuItem Header="Extract text from..." Name="mm_tools_export" Click="mm_tools_export_Click"></MenuItem>
-                <MenuItem Header="Text Visualizer" Name="mm_tools_visual" Click="mm_tools_visual_Click" IsEnabled="False"></MenuItem>
+                <MenuItem Header="Text Visualizer" Name="mm_tools_visual" Click="mm_tools_visual_Click"></MenuItem>
             </MenuItem>
         </Menu>
 
@@ -62,7 +68,6 @@
                     <RowDefinition Height="Auto"></RowDefinition>
                     <RowDefinition Height="Auto"></RowDefinition>
                 </Grid.RowDefinitions>
-
 
                 <ItemsControl Grid.Row="0" Name="IC_NAME" ItemsSource="{Binding name}">
                     <ItemsControl.ItemTemplate>
@@ -129,12 +134,185 @@
                                                         <RowDefinition Height="Auto"></RowDefinition>
                                                         <RowDefinition Height="Auto"></RowDefinition>
                                                         <RowDefinition Height="Auto"></RowDefinition>
+                                                        <RowDefinition Height="Auto"></RowDefinition>
                                                     </Grid.RowDefinitions>
 
                                                     <Label Grid.Row="0" Grid.ColumnSpan="2" Content="{Binding Path=Prefix}" HorizontalContentAlignment="Center"></Label>
                                                     <TextBox Grid.Row="1" Grid.Column="0" Margin="2"  TextWrapping="Wrap" IsReadOnly="True" Text="{Binding Path=Old_string, Mode=OneWay}" ></TextBox>
-                                                    <TextBox Grid.Row="1" Grid.Column="1"  AcceptsReturn="True" Margin="2"  TextWrapping="Wrap" Text="{Binding Path=New_string, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ></TextBox>
-                                                    <Label Grid.Row="2" Grid.ColumnSpan="2" Content="{Binding Path=Postfix}" HorizontalContentAlignment="Center"></Label>
+                                                    <TextBox Grid.Row="1" Grid.Column="1"  AcceptsReturn="True" Margin="2"  TextWrapping="Wrap" Text="{Binding Path=New_string, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                                    <Grid Grid.Row="2" Grid.Column="0" Margin="10">
+                                                        <Image Name="Bitmap_old" Source="{StaticResource Persona4DialogBack}" Stretch="Uniform"></Image>
+                                                        <Grid Height="{Binding ActualHeight, ElementName=Bitmap}" Width="{Binding ActualWidth, ElementName=Bitmap}">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="0.0609*"></ColumnDefinition>
+                                                                <ColumnDefinition Width="0.0266*"></ColumnDefinition>
+                                                                <ColumnDefinition Width="0.9125*"></ColumnDefinition>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="0.1454*"></RowDefinition>
+                                                                <RowDefinition Height="0.19268*"></RowDefinition>
+                                                                <RowDefinition Height="0.5296*"></RowDefinition>
+                                                                <RowDefinition Height="0.1324*"></RowDefinition>
+                                                            </Grid.RowDefinitions>
+
+                                                            <ItemsControl Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Name="VisualT1" ItemsSource="{Binding }">
+                                                                <ItemsControl.ItemContainerStyle>
+                                                                    <Style>
+                                                                        <Setter Property="Canvas.Left">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterX}" ConverterParameter="Name">
+                                                                                    <Binding Path="posX"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                        <Setter Property="Canvas.Top">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterY}" ConverterParameter="Name">
+                                                                                    <Binding Path="posY"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </Style>
+                                                                </ItemsControl.ItemContainerStyle>
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <Canvas/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Image Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}},NotifyOnSourceUpdated=True}" 
+                                           Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource ConverterWidth},NotifyOnSourceUpdated=True}"
+                                           Source="{Binding Bitmap}" Stretch="Fill"></Image>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+
+                                                            <ItemsControl Grid.Column="2" Grid.Row="2" Name="VisualT" ItemsSource="{Binding VisualOldText, Mode=OneWay,NotifyOnSourceUpdated=True}">
+                                                                <ItemsControl.ItemContainerStyle>
+                                                                    <Style>
+                                                                        <Setter Property="Canvas.Left">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterX}"  ConverterParameter="Text">
+                                                                                    <Binding Path="posX"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                        <Setter Property="Canvas.Top">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterY}" ConverterParameter="Text">
+                                                                                    <Binding Path="posY"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </Style>
+                                                                </ItemsControl.ItemContainerStyle>
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <Canvas/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Image Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}, Converter={StaticResource ConverterHeight},NotifyOnSourceUpdated=True}" 
+                                           Width="{Binding Height, RelativeSource={RelativeSource Self}, Converter={StaticResource ConverterWidth},NotifyOnSourceUpdated=True}"
+                                           Source="{Binding Bitmap}" Stretch="Fill" OpacityMask="{x:Null}" />
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </Grid>
+                                                    </Grid>
+                                                    <Grid Grid.Row="2" Grid.Column="1"  Margin="10">
+                                                        <Image Name="Bitmap_new" Source="{StaticResource Persona4DialogBack}" Stretch="Uniform"></Image>
+                                                        <Grid Height="{Binding ActualHeight, ElementName=Bitmap}" Width="{Binding ActualWidth, ElementName=Bitmap}">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="0.0609*"></ColumnDefinition>
+                                                                <ColumnDefinition Width="0.0266*"></ColumnDefinition>
+                                                                <ColumnDefinition Width="0.9125*"></ColumnDefinition>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="0.1454*"></RowDefinition>
+                                                                <RowDefinition Height="0.19268*"></RowDefinition>
+                                                                <RowDefinition Height="0.5296*"></RowDefinition>
+                                                                <RowDefinition Height="0.1324*"></RowDefinition>
+                                                            </Grid.RowDefinitions>
+
+                                                            <ItemsControl Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Name="VisualT1_new" ItemsSource="{Binding}">
+                                                                <ItemsControl.ItemContainerStyle>
+                                                                    <Style>
+                                                                        <Setter Property="Canvas.Left">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterX}" ConverterParameter="Name">
+                                                                                    <Binding Path="posX"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                        <Setter Property="Canvas.Top">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterY}" ConverterParameter="Name">
+                                                                                    <Binding Path="posY"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </Style>
+                                                                </ItemsControl.ItemContainerStyle>
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <Canvas/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Image Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}},NotifyOnSourceUpdated=True}" 
+                                           Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource ConverterWidth},NotifyOnSourceUpdated=True}"
+                                           Source="{Binding Bitmap}" Stretch="Fill"></Image>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+
+                                                            <ItemsControl Grid.Column="2" Grid.Row="2" Name="VisualT_new" ItemsSource="{Binding VisualNewText, Mode=OneWay,NotifyOnSourceUpdated=True}">
+                                                                <ItemsControl.ItemContainerStyle>
+                                                                    <Style>
+                                                                        <Setter Property="Canvas.Left">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterX}"  ConverterParameter="Text">
+                                                                                    <Binding Path="posX"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                        <Setter Property="Canvas.Top">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource ConverterY}" ConverterParameter="Text">
+                                                                                    <Binding Path="posY"></Binding>
+                                                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </Style>
+                                                                </ItemsControl.ItemContainerStyle>
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <Canvas/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Image Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}, Converter={StaticResource ConverterHeight},NotifyOnSourceUpdated=True}" 
+                                           Width="{Binding Height, RelativeSource={RelativeSource Self}, Converter={StaticResource ConverterWidth},NotifyOnSourceUpdated=True}"
+                                           Source="{Binding Bitmap}" Stretch="Fill" OpacityMask="{x:Null}" />
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </Grid>
+                                                    </Grid>
+                                                    <Label Grid.Row="3" Grid.ColumnSpan="2" Content="{Binding Path=Postfix}" HorizontalContentAlignment="Center"></Label>
                                                 </Grid>
 
                                                 <Separator ></Separator>

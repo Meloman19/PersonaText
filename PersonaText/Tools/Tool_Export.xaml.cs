@@ -21,6 +21,7 @@ namespace PersonaText
             DataContext = OVE;
             thread = new Thread(OVE.Thread_Work);
             thread.IsBackground = true;
+            OVE.timer = new System.Timers.Timer(500);
             OVE.timer.Elapsed += OVE.Timer_Elapsed;
         }
 
@@ -179,7 +180,7 @@ namespace PersonaText
 
         Stopwatch sw = new Stopwatch();
 
-        public System.Timers.Timer timer = new System.Timers.Timer(500);
+        public System.Timers.Timer timer;
 
         public void Thread_Work()
         {

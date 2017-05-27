@@ -16,14 +16,14 @@
             <ItemsControl Name="wrap" ItemsSource="{Binding CharList}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel/>
+                        <WrapPanel Background="Black"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                     
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
-                            <Image Width="70" Height="70" Source="{Binding Path=Image}" />
+                            <Image  Width="70" Height="70" Source="{Binding Path=Image}" OpacityMask="{x:Null}" />
                             <TextBox MaxLength="3" Text="{Binding Path=Char}" FontSize="16" TextAlignment="Center" />
                         </StackPanel>
                     </DataTemplate>

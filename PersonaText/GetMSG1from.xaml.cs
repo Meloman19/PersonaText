@@ -24,7 +24,7 @@ namespace PersonaText
         public bool Select = false;
         public int Select_Index = -1;
 
-        public MemoryStream MS = new MemoryStream();
+        public MemoryStream MS;
         public ObservableVariableParseMSG1 OVP = new ObservableVariableParseMSG1();
         public Thread thread;
 
@@ -230,7 +230,7 @@ namespace PersonaText
             {
                 MS = new MemoryStream();
                 FS.Position = MSG1Position.First() + 4;
-                int Size = Text.ReadByteStream(ref FS, 4);
+                int Size = FS.ReadInt();
                 FS.Position = MSG1Position.First();
                 buffer = new byte[Size];
                 FS.Read(buffer, 0, Size);
