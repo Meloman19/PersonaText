@@ -14,6 +14,7 @@ namespace PersonaText
     {
         public static List<fnmp> old_char = new List<fnmp>();
         public static List<fnmp> new_char = new List<fnmp>();
+        public static List<glyphYshift> char_shift = new List<glyphYshift>();
     }
 
     public partial class MainWindow : Window
@@ -47,6 +48,8 @@ namespace PersonaText
             {
                 Text.ReadFN(@"NEW.FNT", ref FontMap.new_char);
             }
+
+            Text.ReadShift(ref FontMap.char_shift);
 
             FontMap.old_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
             FontMap.new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
@@ -219,7 +222,7 @@ namespace PersonaText
                 CS.Owner = this;
                 if (CS.ShowDialog() == true)
                 {
-                //    Text.WriteFNMP(@"NEW.TXT", ref new_char);
+                    Text.WriteFNMP(@"NEW.TXT", ref FontMap.new_char);
                 }
             }
             catch (Exception ex)
@@ -254,12 +257,13 @@ namespace PersonaText
         {
             Tool_Visual TV = new Tool_Visual();
             TV.Owner = this;
-            TV.CharList = FontMap.old_char;
             TV.ShowDialog();
         }
 
         private void MW_Loaded(object sender, RoutedEventArgs e)
         {
+
+
             if (Import_Path != "")
             {
                 if (File.Exists(Import_Path))
