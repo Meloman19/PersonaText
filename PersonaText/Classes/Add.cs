@@ -12,117 +12,6 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
-    public static class StreamExtension
-    {
-        public static void WriteInt(this Stream Stream, int Number)
-        {
-            try
-            {
-                byte[] buffer = BitConverter.GetBytes(Number);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Stream.Write(buffer, 0, 4);
-                }
-                else
-                {
-                    buffer = buffer.Reverse().ToArray();
-                    Stream.Write(buffer, 0, 4);
-                }
-
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-
-        public static void WriteUshort(this Stream Stream, int Number)
-        {
-            Stream.WriteUshort((ushort)Number);
-        }
-
-        public static void WriteUshort(this Stream Stream, ushort Number)
-        {
-            try
-            {
-                byte[] buffer = BitConverter.GetBytes(Number);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Stream.Write(buffer, 0, 2);
-                }
-                else
-                {
-                    buffer = buffer.Reverse().ToArray();
-                    Stream.Write(buffer, 0, 2);
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-
-        public static void WriteString(this Stream Stream, string String, int Length)
-        {
-            try
-            {
-                byte[] buffer = System.Text.Encoding.ASCII.GetBytes(String);
-                Stream.Write(buffer, 0, buffer.Length);
-                for (int i = 0; i < Length - String.Length; i++)
-                {
-                    Stream.WriteByte(0);
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-
-        public static int ReadInt(this Stream Stream)
-        {
-            byte[] buffer = new byte[4];
-            try
-            {
-                Stream.Read(buffer, 0, 4);
-                if (BitConverter.IsLittleEndian)
-                {
-                    return BitConverter.ToInt32(buffer, 0);
-                }
-                else
-                {
-                    return BitConverter.ToInt32(buffer.Reverse().ToArray(), 0);
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                return 0;
-            }
-        }
-
-        public static ushort ReadUshort(this Stream Stream)
-        {
-            byte[] buffer = new byte[2];
-            try
-            {
-                Stream.Read(buffer, 0, 2);
-                if (BitConverter.IsLittleEndian)
-                {
-                    return BitConverter.ToUInt16(buffer, 0);
-                }
-                else
-                {
-                    return BitConverter.ToUInt16(buffer.Reverse().ToArray(), 0);
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                return 0;
-            }
-        }
-    }
 
     public class MSG1 : INotifyPropertyChanged
     {
@@ -208,7 +97,7 @@ namespace PersonaText
 
                         ParseMSG1(MS);
                         UpdateString();
-                        SaveAsText(FileName + " - " + Convert.ToString(LMS.IndexOf(MS)).PadLeft(3, '0') + ".txt");
+                        SaveAsText(FileName, Convert.ToString(LMS.IndexOf(MS)).PadLeft(3, '0'));
                     }
                 }
             }
@@ -223,7 +112,7 @@ namespace PersonaText
 
                     ParseMSG1(MS);
                     UpdateString();
-                    SaveAsText(FileName + ".txt");
+                    SaveAsText(FileName, "000");
                 }
             }
         }
@@ -677,46 +566,54 @@ namespace PersonaText
             return returned;
         }
 
-        public void SaveAsText(string FileName)
+        public void SaveAsText(string FileName, string Index)
         {
-            StreamWriter SW = new StreamWriter(FileName);
+            string FileNameWE = Path.GetFileName(FileName);
 
-            foreach (var Name in name)
+            using (FileStream FS = new FileStream(@"NAMES.TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
-                SW.WriteLine("Name № " + Name.Index + ": " + Name.Old_Name);
-            }
-
-            SW.WriteLine();
-            foreach (var MSG in msg)
-            {
-                SW.Write(MSG.Name + " : ");
-                List<name> Name = name.ToList();
-
-                if (Name.Exists(x => x.Index == MSG.Character_Index))
+                FS.Position = FS.Length;
+                using (StreamWriter SW = new StreamWriter(FS))
                 {
-                    name Name_i = Name.Find(x => x.Index == MSG.Character_Index);
-                    SW.WriteLine(Name_i.Old_Name);
-                }
-                else if (MSG.Type == "SEL")
-                {
-                    SW.WriteLine("<SELECT>");
-                }
-                else { SW.WriteLine("<NO_NAME>"); }
-
-                SW.WriteLine();
-
-                foreach (var STR in MSG.Strings)
-                {
-                    string[] str = Regex.Split(STR.Old_string, "\r\n|\r|\n");
-                    foreach (var S in str)
+                    foreach (var NAME in name)
                     {
-                        SW.WriteLine(S);
+                        SW.WriteLine("Name № " + NAME.Index + ":\t" + NAME.Old_Name);
                     }
-                    SW.WriteLine();
                 }
             }
 
-            SW.Close();
+            string DirectoryName = new DirectoryInfo(Path.GetDirectoryName(FileName)).Name;
+            using (FileStream FS = new FileStream(DirectoryName.ToUpper() + ".TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                FS.Position = FS.Length;
+                using (StreamWriter SW = new StreamWriter(FS))
+                {
+                    List<name> Name = name.ToList();
+                    foreach (var MSG in msg)
+                    {
+                        foreach (var STR in MSG.Strings)
+                        {
+                            SW.Write(FileNameWE + "\t");
+                            SW.Write(Index + "\t");
+                            SW.Write(MSG.Name + "\t");
+                            SW.Write(STR.Index + "\t");
+                            if (Name.Exists(x => x.Index == MSG.Character_Index))
+                            {
+                                name Name_i = Name.Find(x => x.Index == MSG.Character_Index);
+                                SW.Write(Name_i.Old_Name);
+                            }
+                            else if (MSG.Type == "SEL")
+                            {
+                                SW.Write("<SELECT>");
+                            }
+                            else { SW.Write("<NO_NAME>"); }
+
+                            SW.Write("\t");
+                            SW.WriteLine(STR.Old_string);
+                        }
+                    }
+                }
+            }
         }
 
         public void SaveAsMSG1(string FileName, string Add, MemoryStream MS)
@@ -984,7 +881,7 @@ namespace PersonaText
     {
         public void ReadShift(ref List<glyphYshift> List)
         {
-            List.Add(new glyphYshift { Index = 81, Shift =2 });
+            List.Add(new glyphYshift { Index = 81, Shift = 2 });
             List.Add(new glyphYshift { Index = 103, Shift = 2 });
             List.Add(new glyphYshift { Index = 106, Shift = 2 });
             List.Add(new glyphYshift { Index = 112, Shift = 2 });
@@ -1151,7 +1048,7 @@ namespace PersonaText
                     if (List.Exists(x => x.Index == k))
                     {
                         fnmp fnmp = List.Find(x => x.Index == k);
-                        fnmp.Cut = new MyByte { Left = Convert.ToByte(GlyphCut[0, 0] + 5), Right = Convert.ToByte(GlyphCut[0, 1] -5) };
+                        fnmp.Cut = new MyByte { Left = Convert.ToByte(GlyphCut[0, 0] + 5), Right = Convert.ToByte(GlyphCut[0, 1] - 5) };
                         fnmp.Image = BMP;
                         fnmp.Image_data = data;
                     }

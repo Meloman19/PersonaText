@@ -1,11 +1,35 @@
 ﻿using System;
 using System.Windows.Data;
+using System.Drawing;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Collections.Specialized;
+using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
+    public class CharacterIndexConverter : IMultiValueConverter
+    {
+        public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            int Index = (int)value[0];
+            MainWindow MW = (MainWindow)value[1];
+            if (MW.MSG1.name.Count > Index)
+            {
+                return MW.MSG1.name[Index].Old_Name;
+            }
+            else { return "<NO_NAME>"; }
+        }
+
+        public object[] ConvertBack(object value, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     public class ConverterHeigth : IValueConverter
     {
@@ -28,6 +52,7 @@ namespace PersonaText
         {
             double a = (double)value;
             return a * 0.9375;
+
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -40,24 +65,16 @@ namespace PersonaText
     {
         public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            double pos = 0;
-            double heigth = 0;
-            if (value != null)
-            {
-                pos = (double)value[0];
-                heigth = (double)value[1];
-            }
 
-            if (parameter != null)
+            double pos = (double)value[0];
+            double heigth = (double)value[1];
+            if (parameter.ToString() == "Name")
             {
-                if (parameter.ToString() == "Name")
-                {
-                    heigth = heigth * 0.9375;
-                }
-                else
-                {
-                    heigth = heigth * 0.36364 * 0.9375;
-                }
+                heigth = heigth * 0.9375;
+            }
+            else
+            {
+                heigth = heigth * 0.36364 * 0.9375;
             }
 
             return (pos / 32) * heigth;
@@ -73,23 +90,14 @@ namespace PersonaText
     {
         public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            double pos = 0;
-            double heigth = 0;
-            if (value != null)
+            double pos = (double)value[0];
+            double heigth = (double)value[1];
+            if (parameter.ToString() == "Name")
             {
-                pos = (double)value[0];
-                heigth = (double)value[1];
             }
-
-            if (parameter != null)
+            else
             {
-                if (parameter.ToString() == "Name")
-                {
-                }
-                else
-                {
-                    heigth = heigth * 0.36364;
-                }
+                heigth = heigth * 0.36364;
             }
             return (pos / 32) * heigth;
         }
@@ -99,22 +107,4 @@ namespace PersonaText
             throw new NotImplementedException();
         }
     }
-
-    public class CharacterIndexConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            int Index = (int)value;
-            if (MSG.name.Count > Index)
-            { return MSG.name[Index].Old_Name; }
-            else
-            { return "<NO_NAME>"; }
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
 }

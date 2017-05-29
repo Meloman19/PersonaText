@@ -74,8 +74,9 @@
     <Compile Include="CharSet.xaml.cs">
       <DependentUpon>CharSet.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Classes\IniFile.cs" />
     <Compile Include="Classes\Add.cs" />
+    <Compile Include="Classes\Converters.cs" />
+    <Compile Include="Classes\Extensions.cs" />
     <Compile Include="Classes\Types.cs" />
     <Compile Include="GetMSG1from.xaml.cs">
       <DependentUpon>GetMSG1from.xaml</DependentUpon>

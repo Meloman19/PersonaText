@@ -22,7 +22,6 @@ namespace PersonaText
         public MSG1 MSG1 = new MSG1();
         ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow();
 
-        string Import_FileName = "";
         public string Import_Path = "";
         Text Text = new Text();
 
@@ -79,7 +78,6 @@ namespace PersonaText
             if (ofd.ShowDialog() == true)
             {
                 Import_Path = ofd.FileName;
-                Import_FileName = Path.GetFileNameWithoutExtension(Import_Path);
                 open_file();
             }
         }
@@ -89,7 +87,7 @@ namespace PersonaText
             OVMW.openfile = true;
             MSG1.ParseMSG1(Import_Path, false);
             MSG1.UpdateString();
-            this.Title = MSG1.SelectIndex >= 0 ? "Persona Font Editor - [" + Import_FileName + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + "]" : "Persona Font Editor - [" + Import_FileName + "]";
+            this.Title = MSG1.SelectIndex >= 0 ? "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + "]" : "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + "]";
         }
 
         private void open_project()
@@ -107,13 +105,13 @@ namespace PersonaText
             {
                 MSG1.name.Add(NAME);
             }
-            this.Title = "Persona Font Editor - [" + Import_FileName + "]";
+            this.Title = "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + "]";
         }
 
         private void mi_saveproject_click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog sfd = new SaveFileDialog();
-            sfd.FileName = MSG1.SelectIndex >= 0 ? Import_FileName + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + ".PTP" : Import_FileName + ".PTP";
+            sfd.FileName = MSG1.SelectIndex >= 0 ? Path.GetFileNameWithoutExtension(Import_Path) + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + ".PTP" : Path.GetFileNameWithoutExtension(Import_Path) + ".PTP";
             sfd.Filter = "Persona Text Project (*.PTP)|*.PTP";
             if (sfd.ShowDialog() == true)
             {
@@ -132,7 +130,6 @@ namespace PersonaText
             {
                 OVMW.openfile = true;
                 Import_Path = ofd.FileName;
-                Import_FileName = Path.GetFileNameWithoutExtension(Import_Path);
                 Project Pr = new Project(Import_Path);
                 Pr.OpenProject();
                 MSG1.msg.Clear();
@@ -146,7 +143,7 @@ namespace PersonaText
                     MSG1.name.Add(NAME);
                 }
 
-                this.Title = "Persona Font Editor - [" + Import_FileName + "]";
+                this.Title = "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + "]";
             }
         }
 
@@ -236,11 +233,11 @@ namespace PersonaText
         private void STold(object sender, RoutedEventArgs e)
         {
             SaveFileDialog sfd = new SaveFileDialog();
-            sfd.FileName = Import_FileName.Remove(Import_FileName.Length - 4);
+            sfd.FileName = Path.GetFileNameWithoutExtension(Import_Path) + ".TXT";
             sfd.Filter = "Text (.txt)|*.txt";
             if (sfd.ShowDialog() == true)
             {
-                MSG1.SaveAsText(sfd.FileName);
+                MSG1.SaveAsText(sfd.FileName,"000");
             }
         }
 
@@ -321,22 +318,5 @@ namespace PersonaText
         }
     }
 
-    public class CharacterIndexConverter : IMultiValueConverter
-    {
-        public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            int Index = (int)value[0];
-            MainWindow MW = (MainWindow)value[1];
-            if (MW.MSG1.name.Count > Index)
-            {
-                return MW.MSG1.name[Index].Old_Name;
-            }
-            else { return "<NO_NAME>"; }
-        }
 
-        public object[] ConvertBack(object value, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
 }

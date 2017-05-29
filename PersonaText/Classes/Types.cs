@@ -11,59 +11,6 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
-    public static class ObservableCollectionExtentsion
-    {
-        public static void GetBitmapList (this ObservableCollection<BitmapList> List, string Text, ref List<fnmp> CharList, System.Drawing.Color Color)
-        {
-            var split = Regex.Split(Text, "\r\n|\r|\n");
-
-            List.Clear();
-
-            List<System.Windows.Media.Color> ColorBMP = new List<System.Windows.Media.Color>();
-
-            ColorBMP.Add(new System.Windows.Media.Color { A = 0, R = 0, G = 0, B = 0 });
-            for (int i = 1; i < 16; i++)
-            {
-                ColorBMP.Add(new System.Windows.Media.Color
-                {
-                    A = trunc(i * 0x10),
-                    R = Color.R,
-                    G = Color.G,
-                    B = Color.B
-                });
-            }
-            BitmapPalette ColorPaletteBMP = new BitmapPalette(ColorBMP);
-
-            for (int i = 0; i < split.Length; i++)
-            {
-                int linewidth = 0;
-                for (int k = 0; k < split[i].Length; k++)
-                {
-                    string Char = split[i][k].ToString();
-                    fnmp fnmp = CharList.Find(x => x.Char == Char);
-                    if (fnmp != null)
-                    {
-                        BitmapSource BS = BitmapSource.Create(32, 32, 96, 96, PixelFormats.Indexed4, ColorPaletteBMP, fnmp.Image_data, 16);
-
-                        int x_pos = linewidth - fnmp.Cut.Left;
-                        linewidth += fnmp.Cut.Right - fnmp.Cut.Left - 1;
-                        glyphYshift temp = FontMap.char_shift.Find(x => x.Index == fnmp.Index);
-                        int y_pos = temp != null ? 25 * i + temp.Shift : 25 * i;
-
-                        List.Add(new BitmapList { Bitmap = BS, posX = x_pos, posY = y_pos });
-                    }
-                }
-            }
-        }
-
-        private static byte trunc(int value)
-        {
-            if (value < 0) { return 0; }
-            else if (value > 255) { return 255; }
-            else { return (byte)value; }
-        }
-
-    }
 
     public class BitmapList
     {
