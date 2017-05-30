@@ -7,20 +7,28 @@ using System.IO;
 using Microsoft.Win32;
 using System.ComponentModel;
 using System.Windows.Controls;
+using System.Collections.ObjectModel;
 
 namespace PersonaText
 {
-    static class FontMap
+    public class Static
     {
-        public static List<fnmp> old_char = new List<fnmp>();
-        public static List<fnmp> new_char = new List<fnmp>();
-        public static List<glyphYshift> char_shift = new List<glyphYshift>();
+        public static Settings Setting = new Settings();
+        public static PersonaType Personas = new PersonaType();
+        public static class FontMap
+        {
+            public static List<fnmp> old_char = new List<fnmp>();
+            public static List<fnmp> new_char = new List<fnmp>();
+            public static List<glyphYshift> char_shift = new List<glyphYshift>();
+        }
+        public static string SelectedGameType = "";
     }
 
     public partial class MainWindow : Window
     {
         public MSG1 MSG1 = new MSG1();
         ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow();
+        List<string> ComboBox = new List<string>() { "Persona 3 FES", "Persona 4" };
 
         public string Import_Path = "";
         Text Text = new Text();
@@ -28,30 +36,41 @@ namespace PersonaText
         public MainWindow()
         {
             InitializeComponent();
+
             ScrollViewer.DataContext = MSG1;
             mainmenu.DataContext = OVMW;
 
             if (File.Exists(@"OLD.TXT"))
             {
-                Text.ReadFNMP(@"OLD.TXT", ref FontMap.old_char);
+                Text.ReadFNMP(@"OLD.TXT", ref Static.FontMap.old_char);
             }
             if (File.Exists(@"NEW.TXT"))
             {
-                Text.ReadFNMP(@"NEW.TXT", ref FontMap.new_char);
+                Text.ReadFNMP(@"NEW.TXT", ref Static.FontMap.new_char);
             }
             if (File.Exists(@"OLD.FNT"))
             {
-                Text.ReadFN(@"OLD.FNT", ref FontMap.old_char);
+                Text.ReadFN(@"OLD.FNT", ref Static.FontMap.old_char);
             }
             if (File.Exists(@"NEW.FNT"))
             {
-                Text.ReadFN(@"NEW.FNT", ref FontMap.new_char);
+                Text.ReadFN(@"NEW.FNT", ref Static.FontMap.new_char);
             }
 
-            Text.ReadShift(ref FontMap.char_shift);
+            Text.ReadShift(ref Static.FontMap.char_shift);
 
-            FontMap.old_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
-            FontMap.new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
+            Static.FontMap.old_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
+            Static.FontMap.new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
+
+            Combobox_Gametype.DataContext = ComboBox;
+            if(Static.Setting.Get("GameType") == "P3FES")
+            {
+                Combobox_Gametype.SelectedIndex = ComboBox.IndexOf("Persona 3 FES");
+            }
+            else
+            {
+                Combobox_Gametype.SelectedIndex = ComboBox.IndexOf("Persona 4");
+            }
         }
 
         private string[] OpenFiles()
@@ -164,7 +183,7 @@ namespace PersonaText
                     }
                 }
 
-                Text.ReadFN(path, ref FontMap.old_char);
+                Text.ReadFN(path, ref Static.FontMap.old_char);
                 File.Copy(path, @"OLD.FNT", true);
             }
         }
@@ -186,7 +205,7 @@ namespace PersonaText
                     }
                 }
 
-                Text.ReadFN(path, ref FontMap.new_char);
+                Text.ReadFN(path, ref Static.FontMap.new_char);
                 File.Copy(path, @"NEW.FNT", true);
             }
         }
@@ -195,11 +214,11 @@ namespace PersonaText
         {
             try
             {
-                CharSet CS = new CharSet(FontMap.old_char);
+                CharSet CS = new CharSet(Static.FontMap.old_char);
                 CS.Owner = this;
                 if (CS.ShowDialog() == true)
                 {
-                    Text.WriteFNMP(@"OLD.TXT", ref FontMap.old_char);
+                    Text.WriteFNMP(@"OLD.TXT", ref Static.FontMap.old_char);
                     MSG1.UpdateString();
                 }
             }
@@ -215,11 +234,11 @@ namespace PersonaText
 
             try
             {
-                CharSet CS = new CharSet(FontMap.new_char);
+                CharSet CS = new CharSet(Static.FontMap.new_char);
                 CS.Owner = this;
                 if (CS.ShowDialog() == true)
                 {
-                    Text.WriteFNMP(@"NEW.TXT", ref FontMap.new_char);
+                    Text.WriteFNMP(@"NEW.TXT", ref Static.FontMap.new_char);
                 }
             }
             catch (Exception ex)
@@ -237,7 +256,7 @@ namespace PersonaText
             sfd.Filter = "Text (.txt)|*.txt";
             if (sfd.ShowDialog() == true)
             {
-                MSG1.SaveAsText(sfd.FileName,"000");
+                MSG1.SaveAsText(sfd.FileName, "000");
             }
         }
 
@@ -287,6 +306,19 @@ namespace PersonaText
             }
         }
 
+        private void Combobox_Gametype_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems[0].ToString() == "Persona 3 FES")
+            {
+                Static.Setting.Set("GameType", "P3FES");
+                Static.SelectedGameType = "P3FES";
+            }
+            else
+            {
+                Static.Setting.Set("GameType", "P4");
+                Static.SelectedGameType = "P4";
+            }
+        }
     }
 
     public class ObservableVariableMainWindow : INotifyPropertyChanged
@@ -317,6 +349,4 @@ namespace PersonaText
             }
         }
     }
-
-
 }

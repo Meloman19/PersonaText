@@ -29,7 +29,7 @@ namespace PersonaText
         {
             Grid1.Visibility = Visibility.Collapsed;
             Grid2.Visibility = Visibility.Visible;
-            
+
             OVE.SaveMSG1 = ExportMSG1.IsChecked ?? false;
             thread.Start();
         }
@@ -275,7 +275,7 @@ namespace PersonaText
                 }
 
                 FS_getLMS_pos = FS_getLMS.Position;
-                if (FindPosition(ref FS_getLMS, Bytes))
+                if (FS_getLMS.CheckEntrance(Bytes))
                 {
                     MSG1Position.Add(FS_getLMS.Position - 16);
                 }
@@ -288,25 +288,7 @@ namespace PersonaText
             progressbar_text = "";
         }
 
-        private bool FindPosition(ref FileStream FS, byte[] Bytes)
-        {
-            if (Bytes.Length != 0)
-            {
-                if (FS.CanRead)
-                {
-                    if (FS.ReadByte() == Bytes[0])
-                    {
-                        return FindPosition(ref FS, Bytes.Skip(1).ToArray());
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else { return false; }
-            }
-            else { return true; }
-        }
+
 
         public void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {

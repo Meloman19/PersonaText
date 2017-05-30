@@ -11,6 +11,41 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
+    public class PersonaType
+    {
+        private static PersonaСontainer Persona3FES = new PersonaСontainer(new byte[] { 0xF2, 0x08, 0xFF, 0xFF });
+        private static PersonaСontainer Persona4 = new PersonaСontainer(new byte[] { 0xF2, 0x05, 0xFF, 0xFF });
+
+        public PersonaСontainer this[string Game]
+        {
+            get
+            {
+                if (Game == "P3FES")
+                {
+                    return Persona3FES;
+                }
+                else if (Game == "P4")
+                {
+                    return Persona4;
+                }
+                else
+                {
+                    return Persona4;
+                }
+            }
+        }
+
+        public class PersonaСontainer
+        {
+            public PersonaСontainer(byte[] LineSplit)
+            {
+                _LineSplit = LineSplit;
+            }
+
+            private byte[] _LineSplit;
+            public byte[] LineSplit { get { return _LineSplit; } }
+        }
+    }
 
     public class BitmapList
     {
@@ -343,7 +378,7 @@ namespace PersonaText
                     if (C == '>')
                     {
                         Special = false;
-                        fnmp fnmp = FontMap.new_char.Find(x => x.Char == Char);
+                        fnmp fnmp = Static.FontMap.new_char.Find(x => x.Char == Char);
                         if (fnmp != null)
                         {
                             if (fnmp.Index < 0x80)
@@ -374,7 +409,7 @@ namespace PersonaText
                         Char = C.ToString();
                         if (Char != "")
                         {
-                            fnmp fnmp = FontMap.new_char.Find(x => x.Char == Char);
+                            fnmp fnmp = Static.FontMap.new_char.Find(x => x.Char == Char);
                             if (fnmp != null)
                             {
                                 if (fnmp.Index < 0x80)
@@ -433,7 +468,7 @@ namespace PersonaText
                 if (value != _Old_Name_Bytes)
                 {
                     _Old_Name_Bytes = value;
-                    
+
                     Notify("Name_Source");
                 }
             }
@@ -542,6 +577,7 @@ namespace PersonaText
                     {
                         returned = returned + "{";
                         returned = returned + Convert.ToString(MSG.Bytes[1], 16).PadLeft(2, '0').ToUpper();
+
                         for (int i = 2; i < MSG.Bytes.Length; i++)
                         {
                             returned = returned + " " + Convert.ToString(MSG.Bytes[i], 16).PadLeft(2, '0').ToUpper();
@@ -551,18 +587,19 @@ namespace PersonaText
                 }
                 else
                 {
+
                     for (int i = 0; i < MSG.Bytes.Length; i++)
                     {
                         if (0x20 <= MSG.Bytes[i] & MSG.Bytes[i] < 0x80)
                         {
-                            returned += GetChar(FontMap.old_char, MSG.Bytes[i]);
+                            returned += GetChar(Static.FontMap.old_char, MSG.Bytes[i]);
                         }
                         else if (0x80 <= MSG.Bytes[i] & MSG.Bytes[i] < 0xF0)
                         {
                             int newindex = (MSG.Bytes[i] - 0x81) * 0x80 + MSG.Bytes[i + 1] + 0x20;
 
                             i++;
-                            returned += GetChar(FontMap.old_char, newindex);
+                            returned += GetChar(Static.FontMap.old_char, newindex);
                         }
                         else
                         {
@@ -572,11 +609,11 @@ namespace PersonaText
                 }
             }
 
-            VisualOldText.GetBitmapList(returned, ref FontMap.old_char, System.Drawing.Color.White);
+            VisualOldText.GetBitmapList(returned, ref Static.FontMap.old_char, System.Drawing.Color.White);
 
             Old_string = returned;
         }
-    
+
         private byte trunc(int value)
         {
             if (value < 0) { return 0; }
@@ -586,7 +623,7 @@ namespace PersonaText
 
         private void _New_string_Changed()
         {
-            VisualNewText.GetBitmapList(_New_string, ref FontMap.new_char, System.Drawing.Color.White);
+            VisualNewText.GetBitmapList(_New_string, ref Static.FontMap.new_char, System.Drawing.Color.White);
 
             New_string_bytes.Clear();
             List<byte> LB = new List<byte>();
@@ -684,7 +721,7 @@ namespace PersonaText
             string CharStr = Char.ToString();
             if (CharStr != "")
             {
-                fnmp fnmp = FontMap.new_char.Find(x => x.Char == CharStr);
+                fnmp fnmp = Static.FontMap.new_char.Find(x => x.Char == CharStr);
                 if (fnmp != null)
                 {
                     if (fnmp.Index < 0x80)
@@ -706,7 +743,7 @@ namespace PersonaText
         {
             if (CharStr != "")
             {
-                fnmp fnmp = FontMap.new_char.Find(x => x.Char == CharStr);
+                fnmp fnmp = Static.FontMap.new_char.Find(x => x.Char == CharStr);
                 if (fnmp != null)
                 {
                     if (fnmp.Index < 0x80)

@@ -48,7 +48,7 @@ namespace PersonaText
 
                         int x_pos = linewidth - fnmp.Cut.Left;
                         linewidth += fnmp.Cut.Right - fnmp.Cut.Left - 1;
-                        glyphYshift temp = FontMap.char_shift.Find(x => x.Index == fnmp.Index);
+                        glyphYshift temp = Static.FontMap.char_shift.Find(x => x.Index == fnmp.Index);
                         int y_pos = temp != null ? 25 * i + temp.Shift : 25 * i;
 
                         List.Add(new BitmapList { Bitmap = BS, posX = x_pos, posY = y_pos });
@@ -175,6 +175,49 @@ namespace PersonaText
                 MessageBox.Show(e.ToString());
                 return 0;
             }
+        }
+
+        public static bool CheckEntrance(this Stream FS, byte[] Bytes)
+        {
+            if (Bytes.Length != 0)
+            {
+                if (FS.CanRead)
+                {
+                    if (FS.ReadByte() == Bytes[0])
+                    {
+                        return FS.CheckEntrance(Bytes.Skip(1).ToArray());
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else { return false; }
+            }
+            else { return true; }
+        }
+    }
+
+    public static class ByteArrayExtension
+    {
+        public static bool CheckEntrance(this byte[] B, byte[] Bytes, int StartIndex)
+        {
+            if (Bytes.Length != 0)
+            {
+                if (StartIndex < B.Length)
+                {
+                    if (B[StartIndex] == Bytes[0])
+                    {
+                        return B.CheckEntrance(Bytes.Skip(1).ToArray(), StartIndex + 1);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else { return false; }
+            }
+            else { return true; }
         }
     }
 }

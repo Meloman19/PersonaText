@@ -71,14 +71,12 @@ namespace PersonaText
             ComboBoxList CBL = (ComboBoxList)e.AddedItems[0];
             if (CBL.Name == "OldFont")
             {
-                CharList = FontMap.old_char;
+                CharList = Static.FontMap.old_char;
             }
             else if (CBL.Name == "NewFont")
             {
-                CharList = FontMap.new_char;
+                CharList = Static.FontMap.new_char;
             }
         }
     }
-
-    
 }

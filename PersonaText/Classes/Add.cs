@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
-
     public class MSG1 : INotifyPropertyChanged
     {
         #region INotifyPropertyChanged implementation
@@ -385,7 +384,7 @@ namespace PersonaText
                     }
                 }
 
-                Postfix = new ObservableCollection<PersonaText.MyByteArray>(Postfix.Reverse());
+                Postfix = new ObservableCollection<MyByteArray>(Postfix.Reverse());
 
                 for (int i = 0; i < temp.Count; i++)
                 {
@@ -409,15 +408,12 @@ namespace PersonaText
             List<byte> temp2 = new List<byte>();
             for (int i = 0; i < B.Length; i++)
             {
-                if (B[i] == 0xF2)
+                if (B.CheckEntrance(Static.Personas[Static.SelectedGameType].LineSplit, i))
                 {
-                    if (B[i + 1] == 0x05 & B[i + 2] == 0xFF & B[i + 3] == 0xFF)
+                    if (temp2.Count != 0)
                     {
-                        if (temp2.Count != 0)
-                        {
-                            returned.Add(temp2.ToArray());
-                            temp2.Clear();
-                        }
+                        returned.Add(temp2.ToArray());
+                        temp2.Clear();
                     }
                 }
 
@@ -517,9 +513,9 @@ namespace PersonaText
             {
                 if (0x20 <= bytes[i] & bytes[i] < 0x80)
                 {
-                    if (FontMap.old_char.Exists(x => x.Index == bytes[i]))
+                    if (Static.FontMap.old_char.Exists(x => x.Index == bytes[i]))
                     {
-                        fnmp fnmp = FontMap.old_char.Find(x => x.Index == bytes[i]);
+                        fnmp fnmp = Static.FontMap.old_char.Find(x => x.Index == bytes[i]);
                         if (fnmp.Char != "")
                         {
                             returned = returned + fnmp.Char;
@@ -539,9 +535,9 @@ namespace PersonaText
                     int link = (bytes[i] - 0x81) * 0x80 + bytes[i + 1] + 0x20;
 
                     i++;
-                    if (FontMap.old_char.Exists(x => x.Index == link))
+                    if (Static.FontMap.old_char.Exists(x => x.Index == link))
                     {
-                        fnmp fnmp = FontMap.old_char.Find(x => x.Index == link);
+                        fnmp fnmp = Static.FontMap.old_char.Find(x => x.Index == link);
 
                         if (fnmp.Char != "")
                         {
@@ -609,7 +605,14 @@ namespace PersonaText
                             else { SW.Write("<NO_NAME>"); }
 
                             SW.Write("\t");
-                            SW.WriteLine(STR.Old_string);
+                            var split = Regex.Split(STR.Old_string, "\r\n|\r|\n");
+                            SW.Write(split[0]);
+                            for (int i = 1; i < split.Length; i++)
+                            {
+                                SW.Write(" " + split[i]);
+                            }
+
+                            SW.WriteLine();
                         }
                     }
                 }

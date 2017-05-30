@@ -38,6 +38,7 @@
                 <MenuItem Header="Extract text from..." Name="mm_tools_export" Click="mm_tools_export_Click"></MenuItem>
                 <MenuItem Header="Text Visualizer" Name="mm_tools_visual" Click="mm_tools_visual_Click"></MenuItem>
             </MenuItem>
+            <ComboBox Name="Combobox_Gametype" ItemsSource="{Binding}" SelectionChanged="Combobox_Gametype_SelectionChanged" />
         </Menu>
 
         <Grid Grid.Row="1" Name="menug" Width="{Binding ElementName=IC_MSG, Path=ActualWidth}" HorizontalAlignment="Left">
