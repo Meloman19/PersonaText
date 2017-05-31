@@ -91,6 +91,16 @@ namespace PersonaText
         {
             OVE.Abort = true;
         }
+
+        private void ComboBoxItem_Selected_1(object sender, RoutedEventArgs e)
+        {
+            OVE.MSG1.SaveAsTextOption = 1;
+        }
+
+        private void ComboBoxItem_Selected_2(object sender, RoutedEventArgs e)
+        {
+            OVE.MSG1.SaveAsTextOption = 2;
+        }
     }
 
     public class ObservableVariableExport : INotifyPropertyChanged

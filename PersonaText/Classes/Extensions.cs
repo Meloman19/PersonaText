@@ -14,6 +14,34 @@ namespace PersonaText
 {
     public static class ObservableCollectionExtentsion
     {
+        public static void AddChar(this List<byte> ByteList, char Char, List<fnmp> FontMap)
+        {
+            ByteList.AddChar(Char.ToString(), FontMap);
+        }
+
+        public static void AddChar(this List<byte> ByteList, string Char, List<fnmp> FontMap)
+        {
+            if (Char != "")
+            {
+                fnmp fnmp = FontMap.Find(x => x.Char == Char);
+                if (fnmp != null)
+                {
+                    if (fnmp.Index < 0x80)
+                    {
+                        ByteList.Add((byte)fnmp.Index);
+                    }
+                    else
+                    {
+                        byte byte2 = Convert.ToByte((fnmp.Index - 0x20) % 0x80);
+                        byte byte1 = Convert.ToByte(((fnmp.Index - 0x20 - byte2) / 0x80) + 0x81);
+
+                        ByteList.Add(byte1);
+                        ByteList.Add(byte2);
+                    }
+                }
+            }
+        }
+
         public static void GetBitmapList(this ObservableCollection<BitmapList> List, string Text, ref List<fnmp> CharList, System.Drawing.Color Color)
         {
             var split = Regex.Split(Text, "\r\n|\r|\n");
@@ -218,6 +246,40 @@ namespace PersonaText
                 else { return false; }
             }
             else { return true; }
+        }
+    }
+
+    public static class StringExtension
+    {
+        public static byte[] GetEncodeByte(this string String, List<fnmp> FontMap)
+        {
+            List<byte> LB = new List<byte>();
+            foreach (var C in String)
+            {
+                LB.AddChar(C, FontMap);
+            }
+            return LB.ToArray();
+        }
+
+        public static byte[] GetSystemByte(this string String)
+        {
+            List<byte> ListByte = new List<byte>();
+            string[] temp = String.Split(' ');
+            foreach (var a in temp)
+            {
+                try
+                {
+                    
+                    ListByte.Add(Convert.ToByte(a, 16));
+                }
+                catch
+                {
+                    ListByte.Clear();
+                    ListByte.AddRange(System.Text.Encoding.ASCII.GetBytes(String));
+                    return ListByte.ToArray();
+                }
+            }
+            return ListByte.ToArray();
         }
     }
 }

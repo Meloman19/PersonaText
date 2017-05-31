@@ -17,6 +17,15 @@ namespace PersonaText
 {
     public class Settings
     {
+        public class CurrentSettings : Settings
+        {
+        }
+
+        public static class DefaultSettings
+        {
+            
+        }
+
         public class StringSettings
         {
             public string Name { get; set; }
@@ -29,11 +38,11 @@ namespace PersonaText
             }
         }
 
-        public List<StringSettings> CurrentSettings { get; set; } = new List<StringSettings>();
+        public List<StringSettings> _CurrentSettings { get; set; } = new List<StringSettings>();
 
         private void Initialization()
         {
-            CurrentSettings.Add(new StringSettings("GameType", "P4"));
+            _CurrentSettings.Add(new StringSettings("GameType", "P4"));
         }
 
         public void CreateSettingsFile()
@@ -45,7 +54,7 @@ namespace PersonaText
                 XDoc.Add(Setting);
                 XElement Strings = new XElement("Strings");
                 Setting.Add(Strings);
-                foreach (var a in CurrentSettings) { Strings.Add(new XElement(a.Name, a.Value)); }
+                foreach (var a in _CurrentSettings) { Strings.Add(new XElement(a.Name, a.Value)); }
 
                 XDoc.Save(@"PersonaText.xml");
             }
@@ -67,7 +76,7 @@ namespace PersonaText
                         {
                             foreach (var c in b.Elements())
                             {
-                                StringSettings temp = CurrentSettings.Find(x => x.Name == c.Name);
+                                StringSettings temp = _CurrentSettings.Find(x => x.Name == c.Name);
                                 if (temp != null)
                                 {
                                     temp.Value = c.Value;
@@ -81,12 +90,12 @@ namespace PersonaText
 
         public string Get(string Name)
         {
-            return CurrentSettings.Find(x => x.Name == Name).Value;
+            return _CurrentSettings.Find(x => x.Name == Name).Value;
         }
 
         public void Set(string Name, string Value)
         {
-            StringSettings temp = CurrentSettings.Find(x => x.Name == Name);
+            StringSettings temp = _CurrentSettings.Find(x => x.Name == Name);
             if (temp != null)
             {
                 temp.Value = Value;

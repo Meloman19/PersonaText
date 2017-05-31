@@ -614,130 +614,62 @@ namespace PersonaText
             Old_string = returned;
         }
 
-        private byte trunc(int value)
-        {
-            if (value < 0) { return 0; }
-            else if (value > 255) { return 255; }
-            else { return (byte)value; }
-        }
-
         private void _New_string_Changed()
         {
             VisualNewText.GetBitmapList(_New_string, ref Static.FontMap.new_char, System.Drawing.Color.White);
 
             New_string_bytes.Clear();
             List<byte> LB = new List<byte>();
-            string Char = "";
-            string Type = "Text";
-            bool Special = false;
             int Index = 0;
-            foreach (var C in _New_string)
-            {
-                if (C == '\n' | C == '\r')
-                {
-                    if (LB.Count > 0)
-                    {
-                        New_string_bytes.Add(new MyByteArray { Index = Index, Type = Type, Bytes = LB.ToArray() });
-                        Index++;
-                    }
-                    Type = "System";
-                    LB.Clear();
-                    LB.Add(0x0A);
-                    New_string_bytes.Add(new MyByteArray { Index = Index, Type = Type, Bytes = LB.ToArray() });
-                    Index++;
-                    Type = "Text";
-                    LB.Clear();
-                }
-                else if (Type == "System")
-                {
-                    if (C == '}')
-                    {
-                        if (LB.Count > 0)
-                        {
-                            string[] str = System.Text.Encoding.Default.GetString(LB.ToArray()).Split(' ');
-                            LB.Clear();
-                            foreach (string st in str)
-                            {
-                                LB.Add(Convert.ToByte(st, 16));
-                            }
-                            New_string_bytes.Add(new MyByteArray { Index = Index, Type = Type, Bytes = LB.ToArray() });
-                            Index++;
-                        }
-                        Type = "Text";
-                        LB.Clear();
-                    }
-                    else
-                    {
-                        LB.Add(Convert.ToByte(C));
-                    }
-                }
-                else if (Special)
-                {
-                    if (C == '>')
-                    {
-                        Special = false;
 
-                        GetIndex(ref LB, Char);
-                        Char = "";
-                    }
-                    else
-                    {
-                        Char = Char + C;
-                    }
+            string[] split = Regex.Split(_New_string, "(\r\n|\r|\n)");
+
+            foreach (var a in split)
+            {
+                if (Regex.IsMatch(a, "\r\n|\r|\n"))
+                {
+                    New_string_bytes.Add(new PersonaText.MyByteArray { Index = Index, Type = "System", Bytes = new byte[] { 0x0A } });
+                    Index++;
                 }
                 else
                 {
-                    if (C == '<')
+                    string[] splitstr = Regex.Split(a, @"({.+})");
+
+                    foreach(var b in splitstr)
                     {
-                        Special = true;
-                    }
-                    else if (C == '{')
-                    {
-                        if (LB.Count > 0)
+                        if(Regex.IsMatch(b, @"{.+}"))
                         {
-                            New_string_bytes.Add(new MyByteArray { Index = Index, Type = Type, Bytes = LB.ToArray() });
+                            New_string_bytes.Add(new MyByteArray { Index = Index, Type = "System", Bytes = b.Substring(1, b.Length - 2).GetSystemByte() });
                             Index++;
-                            LB.Clear();
                         }
-                        Type = "System";
-                    }
-                    else
-                    {
-                        GetIndex(ref LB, C);
+                        else
+                        {
+                            string[] splitsubstr = Regex.Split(b, @"(<.+>)");
+                            List<byte> ListByte = new List<byte>();
+
+                            foreach(var c in splitsubstr)
+                            {
+                                if (Regex.IsMatch(c, @"<.+>"))
+                                {
+                                    ListByte.AddChar(c.Substring(1, c.Length - 2), Static.FontMap.new_char);
+                                }
+                                else
+                                {
+                                    ListByte.AddRange(c.GetEncodeByte(Static.FontMap.new_char));
+                                }
+                            }
+
+                            New_string_bytes.Add(new MyByteArray { Index = Index, Type = "Text", Bytes = ListByte.ToArray() });
+                        }
                     }
                 }
-
-
-            }
-
-            if (LB.Count > 0)
-            {
-                New_string_bytes.Add(new MyByteArray { Index = Index, Type = Type, Bytes = LB.ToArray() });
             }
         }
 
         private void GetIndex(ref List<byte> ByteList, char Char)
         {
             string CharStr = Char.ToString();
-            if (CharStr != "")
-            {
-                fnmp fnmp = Static.FontMap.new_char.Find(x => x.Char == CharStr);
-                if (fnmp != null)
-                {
-                    if (fnmp.Index < 0x80)
-                    {
-                        ByteList.Add((byte)fnmp.Index);
-                    }
-                    else
-                    {
-                        byte byte2 = Convert.ToByte((fnmp.Index - 0x20) % 0x80);
-                        byte byte1 = Convert.ToByte(((fnmp.Index - 0x20 - byte2) / 0x80) + 0x81);
-
-                        ByteList.Add(byte1);
-                        ByteList.Add(byte2);
-                    }
-                }
-            }
+            GetIndex(ref ByteList, CharStr);
         }
         private void GetIndex(ref List<byte> ByteList, string CharStr)
         {

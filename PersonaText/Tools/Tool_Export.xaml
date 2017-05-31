@@ -19,7 +19,11 @@
 
             <Button Grid.Column="0" Grid.Row="0" Name="B1" Height="30" Width="100" Margin="20" Click="Folder_Click" Content="Select Folder" />
             <Button Grid.Column="1" Grid.Row="0" Name="B2" Height="30" Width="100" Margin="20" Click="Files_Click" Content="Select Files" />
-            <CheckBox Grid.ColumnSpan="2" Grid.Row="1" HorizontalAlignment="Center" Name="ExportMSG1" Margin="10,0,10,10">Extract MSG1</CheckBox>
+            <CheckBox Grid.Column="0" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Name="ExportMSG1">Extract MSG1</CheckBox>
+            <ComboBox Grid.Column="1" Grid.Row="1" SelectedIndex="0" Height="Auto" Margin="10">
+                <ComboBoxItem Selected="ComboBoxItem_Selected_1">Each folder</ComboBoxItem>
+                <ComboBoxItem Selected="ComboBoxItem_Selected_2">Each file singly</ComboBoxItem>
+            </ComboBox>
         </Grid>
 
         <Grid Name="Grid2" Width="400" Height="80" Visibility="Collapsed">

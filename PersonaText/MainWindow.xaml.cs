@@ -256,7 +256,7 @@ namespace PersonaText
             sfd.Filter = "Text (.txt)|*.txt";
             if (sfd.ShowDialog() == true)
             {
-                MSG1.SaveAsText(sfd.FileName, "000");
+                MSG1.SaveAsText(sfd.FileName, "", 2);
             }
         }
 

@@ -14,6 +14,7 @@ namespace PersonaText
 {
     public class MSG1 : INotifyPropertyChanged
     {
+       public int SaveAsTextOption { get; set; } = 0;
         #region INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -96,7 +97,7 @@ namespace PersonaText
 
                         ParseMSG1(MS);
                         UpdateString();
-                        SaveAsText(FileName, Convert.ToString(LMS.IndexOf(MS)).PadLeft(3, '0'));
+                        SaveAsText(FileName, Convert.ToString(LMS.IndexOf(MS)).PadLeft(3, '0'), SaveAsTextOption);
                     }
                 }
             }
@@ -111,7 +112,7 @@ namespace PersonaText
 
                     ParseMSG1(MS);
                     UpdateString();
-                    SaveAsText(FileName, "000");
+                    SaveAsText(FileName, "000", SaveAsTextOption);
                 }
             }
         }
@@ -562,11 +563,28 @@ namespace PersonaText
             return returned;
         }
 
-        public void SaveAsText(string FileName, string Index)
+        public void SaveAsText(string FileName, string Index, int Option)
         {
+            if (Option == 1)
+            {
+                SaveAsTextOp1(FileName, Index);
+            }
+            else if (Option == 2)
+            {
+                SaveAsTextOp2(FileName, Index);
+            }
+            else
+            {
+                MessageBox.Show("SaveAsText Option invalid");
+            }
+        }
+
+        public void SaveAsTextOp1(string FileName, string Index)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(FileName) + "\\Export Text");
             string FileNameWE = Path.GetFileName(FileName);
 
-            using (FileStream FS = new FileStream(@"NAMES.TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            using (FileStream FS = new FileStream(@"Export Text\\NAMES.TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
                 FS.Position = FS.Length;
                 using (StreamWriter SW = new StreamWriter(FS))
@@ -579,7 +597,7 @@ namespace PersonaText
             }
 
             string DirectoryName = new DirectoryInfo(Path.GetDirectoryName(FileName)).Name;
-            using (FileStream FS = new FileStream(DirectoryName.ToUpper() + ".TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            using (FileStream FS = new FileStream("Export Text\\" + DirectoryName.ToUpper() + ".TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
                 FS.Position = FS.Length;
                 using (StreamWriter SW = new StreamWriter(FS))
@@ -591,6 +609,55 @@ namespace PersonaText
                         {
                             SW.Write(FileNameWE + "\t");
                             SW.Write(Index + "\t");
+                            SW.Write(MSG.Name + "\t");
+                            SW.Write(STR.Index + "\t");
+                            if (Name.Exists(x => x.Index == MSG.Character_Index))
+                            {
+                                name Name_i = Name.Find(x => x.Index == MSG.Character_Index);
+                                SW.Write(Name_i.Old_Name);
+                            }
+                            else if (MSG.Type == "SEL")
+                            {
+                                SW.Write("<SELECT>");
+                            }
+                            else { SW.Write("<NO_NAME>"); }
+
+                            SW.Write("\t");
+                            var split = Regex.Split(STR.Old_string, "\r\n|\r|\n");
+                            SW.Write(split[0]);
+                            for (int i = 1; i < split.Length; i++)
+                            {
+                                SW.Write(" " + split[i]);
+                            }
+
+                            SW.WriteLine();
+                        }
+                    }
+                }
+            }
+        }
+
+        public void SaveAsTextOp2(string FileName, string Index)
+        {
+
+            string newFileName = Index == "" ? Path.GetDirectoryName(FileName) + "\\" + Path.GetFileNameWithoutExtension(FileName) + ".TXT"
+                : Path.GetDirectoryName(FileName) + "\\" + Path.GetFileNameWithoutExtension(FileName) + "-" + Index + ".TXT";
+
+            using (FileStream FS = new FileStream(newFileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                using (StreamWriter SW = new StreamWriter(FS))
+                {
+                    foreach (var NAME in name)
+                    {
+                        SW.WriteLine("Name № " + NAME.Index + ":\t" + NAME.Old_Name);
+                    }
+                    SW.WriteLine();
+
+                    List<name> Name = name.ToList();
+                    foreach (var MSG in msg)
+                    {
+                        foreach (var STR in MSG.Strings)
+                        {
                             SW.Write(MSG.Name + "\t");
                             SW.Write(STR.Index + "\t");
                             if (Name.Exists(x => x.Index == MSG.Character_Index))
