@@ -56,7 +56,7 @@ namespace PersonaText
                 Setting.Add(Strings);
                 foreach (var a in _CurrentSettings) { Strings.Add(new XElement(a.Name, a.Value)); }
 
-                XDoc.Save(@"PersonaText.xml");
+                XDoc.Save( Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\PersonaText.xml");
             }
             catch (Exception e)
             {

@@ -38,7 +38,7 @@ namespace PersonaText
         {
             System.Windows.Forms.FolderBrowserDialog fbd = new System.Windows.Forms.FolderBrowserDialog();
             fbd.ShowNewFolderButton = false;
-            fbd.SelectedPath = "d:\\PS2\\Other\\Shin Megami Tensei - Persona 4 (USA)\\Game";
+            fbd.SelectedPath = "d:\\PS2\\EVENT";
             if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 getlist(fbd.SelectedPath, ref OVE.FileList);
@@ -297,8 +297,6 @@ namespace PersonaText
             progressbar = 1001;
             progressbar_text = "";
         }
-
-
 
         public void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {

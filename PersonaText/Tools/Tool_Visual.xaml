@@ -46,6 +46,7 @@
                 <RowDefinition></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="Auto"></RowDefinition>
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
@@ -137,6 +138,7 @@
 
             <TextBox Grid.Row="1" Width="200" HorizontalAlignment="Left" MaxLines="1" Margin="4" TextChanged="TextBox_NameChanged" />
             <TextBox Grid.Row="2" Margin="15,4,4,4" TextChanged="TextBox_TextChanged" AcceptsReturn="True" />
+            <TextBox Grid.Row="3" Margin="15,4,4,4" IsReadOnly="True" Name="HEX" TextWrapping="Wrap"/>
         </Grid>
     </Grid>
 </Window>

@@ -12,9 +12,47 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
+    public static class Util
+    {
+        public static byte ByteTruncate(int value)
+        {
+            if (value < 0) { return 0; }
+            else if (value > 255) { return 255; }
+            else { return (byte)value; }
+        }
+
+        public static bool ByteArrayCompareWithSimplest(byte[] p_BytesLeft, byte[] p_BytesRight)
+        {
+            if (p_BytesLeft.Length != p_BytesRight.Length)
+                return false;
+
+            var length = p_BytesLeft.Length;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (p_BytesLeft[i] != p_BytesRight[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static void SaveToBMD(MemoryStream NewMSG1, string FileName)
+        {
+            NewMSG1.SaveToFile(FileName);
+        }
+
+        public static void SaveToPM1(MemoryStream NewMSG1, string SourceFile, string FileName)
+        {
+            //PersonaFileTypes.PM1 PM1 = new PersonaFileTypes.PM1(SourceFile);
+            //PM1.SetNewMSG1(NewMSG1);
+            //PM1.SaveNewPM1(FileName);
+        }
+    }
+
     public class MSG1 : INotifyPropertyChanged
     {
-       public int SaveAsTextOption { get; set; } = 0;
+        public int SaveAsTextOption { get; set; } = 0;
         #region INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -28,7 +66,6 @@ namespace PersonaText
         #endregion INotifyPropertyChanged implementation
 
         Text Text = new Text();
-        public int SelectIndex = -1;
 
         private MemoryStream MS_MSG1;
 
@@ -68,13 +105,13 @@ namespace PersonaText
 
         public void ParseMSG1(string FileName, bool SaveMSG1)
         {
-            MS_MSG1 = GetMSG1(FileName, ref SelectIndex);
+            MS_MSG1 = GetMSG1(FileName);
 
             if (MS_MSG1 != null)
             {
                 if (SaveMSG1)
                 {
-                    if (SelectIndex >= 0) { SaveAsMSG1(FileName, " - " + Convert.ToString(SelectIndex).PadLeft(3, '0'), MS_MSG1); }
+                    if (Static.FileInfo.SelectPosition >= 0) { SaveAsMSG1(FileName, " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0'), MS_MSG1); }
                     else { SaveAsMSG1(FileName, "", MS_MSG1); }
                 }
                 MS_MSG1.Position = 0;
@@ -119,7 +156,7 @@ namespace PersonaText
 
         #region ParseMSG1
 
-        public MemoryStream GetMSG1(string FileName, ref int SelectIndex)
+        public MemoryStream GetMSG1(string FileName)
         {
             FileInfo FI = new FileInfo(FileName);
 
@@ -148,7 +185,6 @@ namespace PersonaText
                 GetMSG1from GMF = new PersonaText.GetMSG1from();
                 GMF.OVP.FileName = FileName;
                 GMF.ShowDialog();
-                SelectIndex = GMF.Select_Index;
                 return GMF.MS;
             }
         }
@@ -523,12 +559,12 @@ namespace PersonaText
                         }
                         else
                         {
-                            returned = returned + "{!}";
+                            returned = returned + "{C}";
                         }
                     }
                     else
                     {
-                        returned = returned + "{!}";
+                        returned = returned + "{NC}";
                     }
                 }
                 else if (0x80 <= bytes[i] & bytes[i] < 0xF0)
@@ -581,7 +617,7 @@ namespace PersonaText
 
         public void SaveAsTextOp1(string FileName, string Index)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FileName) + "\\Export Text");
+            Directory.CreateDirectory("Export Text");
             string FileNameWE = Path.GetFileName(FileName);
 
             using (FileStream FS = new FileStream(@"Export Text\\NAMES.TXT", FileMode.OpenOrCreate, FileAccess.ReadWrite))
@@ -698,69 +734,67 @@ namespace PersonaText
             }
         }
 
-        public void SaveAsNewMSG1(string FileName)
+        public MemoryStream GetNewMSG1()
         {
-            string NewFileName = Path.GetDirectoryName(FileName) + "\\" + Path.GetFileNameWithoutExtension(FileName) + "_NEW.MSG1";
+            byte[] buffer;
 
-            try
+            using (MemoryStream MS = new MemoryStream())
             {
-                FileStream FS = new FileStream(NewFileName, FileMode.Create, FileAccess.ReadWrite);
-
                 List<List<int>> MSG_pos = new List<List<int>>();
                 List<int> NAME_pos = new List<int>();
                 List<int> LastBlock = new List<int>();
 
-                FS.WriteInt(0x7);
-                FS.WriteInt(0x0);
-                FS.WriteString("MSG1", 8);
-                FS.WriteInt(0x0);
-                FS.WriteInt(0x0);
-                FS.WriteInt(msg.Count);
-                FS.WriteInt(0x20000);
+                MS.WriteInt(0x7);
+                MS.WriteInt(0x0);
+                MS.WriteString("MSG1", 8);
+                MS.WriteInt(0x0);
+                MS.WriteInt(0x0);
+                MS.WriteInt(msg.Count);
+                MS.WriteInt(0x20000);
 
                 foreach (var MSG in msg)
                 {
-                    if (MSG.Type == "MSG") { FS.WriteInt(0x0); }
-                    else if (MSG.Type == "SEL") { FS.WriteInt(0x1); }
+                    if (MSG.Type == "MSG") { MS.WriteInt(0x0); }
+                    else if (MSG.Type == "SEL") { MS.WriteInt(0x1); }
                     else { MessageBox.Show("SaveMSG1 Error"); }
 
-                    LastBlock.Add((int)FS.Position);
-                    FS.WriteInt(0x0);
+                    LastBlock.Add((int)MS.Position);
+                    MS.WriteInt(0x0);
                 }
 
-                LastBlock.Add((int)FS.Position);
-                FS.WriteInt(0x0);
-                FS.WriteInt(name.Count);
-                FS.WriteInt(0x0);
-                FS.WriteInt(0x0);
+                LastBlock.Add((int)MS.Position);
+                MS.WriteInt(0x0);
+                MS.WriteInt(name.Count);
+                MS.WriteInt(0x0);
+                MS.WriteInt(0x0);
 
                 foreach (var MSG in msg)
                 {
                     List<int> MSG_o = new List<int>();
-                    MSG_o.Add((int)FS.Position);
+                    MSG_o.Add((int)MS.Position);
 
-                    FS.WriteString(MSG.Name, 24);
+                    MS.WriteString(MSG.Name, 24);
 
                     if (MSG.Type == "MSG")
                     {
-                        FS.WriteUshort(MSG.Strings.Count);
+                        MS.WriteUshort(MSG.Strings.Count);
 
-                        if (MSG.Character_Index == -1) { FS.WriteUshort(0xFFFF); }
-                        else { FS.WriteUshort(MSG.Character_Index); }
+                        if (MSG.Character_Index == -1) { MS.WriteUshort(0xFFFF); }
+                        else { MS.WriteUshort(MSG.Character_Index); }
                     }
                     else if (MSG.Type == "SEL")
                     {
-                        FS.WriteUshort(0);
-                        FS.WriteUshort((ushort)MSG.Strings.Count);
-                        FS.WriteInt(0x0);
+                        MS.WriteUshort(0);
+                        MS.WriteUshort((ushort)MSG.Strings.Count);
+                        MS.WriteInt(0x0);
                     }
 
                     int Size = 0;
 
                     foreach (var String in MSG.Strings)
                     {
-                        LastBlock.Add((int)FS.Position);
-                        FS.WriteInt(0x0);
+                        LastBlock.Add((int)MS.Position);
+                        MS.WriteInt(0x0);
                         foreach (var Str in String.Prefix_bytes)
                         {
                             Size = Size + Str.Bytes.Length;
@@ -776,7 +810,7 @@ namespace PersonaText
                     }
                     MSG_o.Add(Size);
 
-                    FS.WriteInt(0x0);
+                    MS.WriteInt(0x0);
 
                     foreach (var String in MSG.Strings)
                     {
@@ -794,88 +828,88 @@ namespace PersonaText
                             NewString.AddRange(postfix.Bytes);
                         }
 
-                        MSG_o.Add((int)FS.Position);
-                        FS.Write(NewString.ToArray(), 0, NewString.Count);
+                        MSG_o.Add((int)MS.Position);
+                        MS.Write(NewString.ToArray(), 0, NewString.Count);
                     }
 
-                    while (FS.Length % 4 != 0)
+                    while (MS.Length % 4 != 0)
                     {
-                        FS.WriteByte(0);
+                        MS.WriteByte(0);
                     }
 
                     MSG_pos.Add(MSG_o);
                 }
 
-                long Name_Block_pos = FS.Length;
-                FS.Position = 0x20;
+                long Name_Block_pos = MS.Length;
+                MS.Position = 0x20;
                 for (int i = 0; i < msg.Count; i++)
                 {
-                    FS.Position += 4;
-                    FS.WriteInt(MSG_pos[i][0] - 0x20);
+                    MS.Position += 4;
+                    MS.WriteInt(MSG_pos[i][0] - 0x20);
                 }
-                FS.WriteInt((int)Name_Block_pos - 0x20);
+                MS.WriteInt((int)Name_Block_pos - 0x20);
                 for (int i = 0; i < msg.Count; i++)
                 {
-                    FS.Position = MSG_pos[i][0];
+                    MS.Position = MSG_pos[i][0];
 
                     if (msg[i].Type == "MSG")
                     {
-                        FS.Position += 28;
+                        MS.Position += 28;
                     }
                     else if (msg[i].Type == "SEL")
                     {
-                        FS.Position += 32;
+                        MS.Position += 32;
                     }
                     else { MessageBox.Show("SD"); }
 
                     for (int k = 0; k < msg[i].Strings.Count; k++)
                     {
-                        FS.WriteInt(MSG_pos[i][k + 2] - 0x20);
+                        MS.WriteInt(MSG_pos[i][k + 2] - 0x20);
                     }
-                    FS.WriteInt(MSG_pos[i][1]);
+                    MS.WriteInt(MSG_pos[i][1]);
                 }
 
 
-                FS.Position = Name_Block_pos;
+                MS.Position = Name_Block_pos;
                 foreach (var NAME in name)
                 {
-                    LastBlock.Add((int)FS.Position);
-                    FS.WriteInt(0);
+                    LastBlock.Add((int)MS.Position);
+                    MS.WriteInt(0);
                 }
                 foreach (var NAME in name)
                 {
-                    NAME_pos.Add((int)FS.Position);
-                    FS.Write(NAME.New_Name_Bytes, 0, NAME.New_Name_Bytes.Length);
-                    FS.WriteByte(0);
+                    NAME_pos.Add((int)MS.Position);
+                    MS.Write(NAME.New_Name_Bytes, 0, NAME.New_Name_Bytes.Length);
+                    MS.WriteByte(0);
                 }
-                FS.Position = Name_Block_pos;
+                MS.Position = Name_Block_pos;
                 for (int i = 0; i < name.Count; i++)
                 {
-                    FS.WriteInt(NAME_pos[i] - 0x20);
+                    MS.WriteInt(NAME_pos[i] - 0x20);
                 }
-                FS.Position = FS.Length;
-                while (FS.Length % 4 != 0)
+                MS.Position = MS.Length;
+                while (MS.Length % 4 != 0)
                 {
-                    FS.WriteByte(0);
+                    MS.WriteByte(0);
                 }
 
-                int LastBlockPos = (int)FS.Position;
+                int LastBlockPos = (int)MS.Position;
                 byte[] LastBlockBytes = getLastBlock(LastBlock);
-                FS.Write(LastBlockBytes, 0, LastBlockBytes.Length);
+                MS.Write(LastBlockBytes, 0, LastBlockBytes.Length);
 
-                FS.Position = 0x10;
-                FS.WriteInt(LastBlockPos);
-                FS.WriteInt(LastBlockBytes.Length);
+                MS.Position = 0x10;
+                MS.WriteInt(LastBlockPos);
+                MS.WriteInt(LastBlockBytes.Length);
 
-                FS.Position = 0x4;
-                FS.WriteInt((int)FS.Length);
+                MS.Position = 0x4;
+                MS.WriteInt((int)MS.Length);
 
-                FS.Close();
+                MS.Position = 0;
+                buffer = new byte[MS.Length];
+                MS.Read(buffer, 0, (int)MS.Length);
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
+
+            return new MemoryStream(buffer);
         }
 
         private byte[] getLastBlock(List<int> Addresses)
@@ -1232,6 +1266,8 @@ namespace PersonaText
             {
                 XDocument xDoc = new XDocument();
                 XElement Document = new XElement("MSG1");
+                Document.Add(new XAttribute("SourceFileName", Static.FileInfo.SourceFileName));
+                Document.Add(new XAttribute("Position", Static.FileInfo.SelectPosition));
                 xDoc.Add(Document);
                 XElement CharName = new XElement("CharacterNames");
                 Document.Add(CharName);
@@ -1241,8 +1277,6 @@ namespace PersonaText
                     XElement Name = new XElement("Name");
                     Name.Add(new XAttribute("Index", NAME.Index));
                     Name.Add(new XElement("OldNameSource", BitConverter.ToString(NAME.Old_Name_Bytes)));
-                    Name.Add(new XElement("OldName", NAME.Old_Name));
-                    Name.Add(new XElement("NewNameByte", BitConverter.ToString(NAME.New_Name_Bytes)));
                     Name.Add(new XElement("NewName", NAME.New_Name));
                     CharName.Add(Name);
                 }
@@ -1267,49 +1301,31 @@ namespace PersonaText
                         String.Add(new XAttribute("Index", STR.Index));
                         Strings.Add(String);
 
-                        XElement Prefix = new XElement("Prefix");
-                        String.Add(Prefix);
                         foreach (var A in STR.Prefix_bytes)
                         {
                             XElement PrefixBytes = new XElement("PrefixBytes", BitConverter.ToString(A.Bytes));
                             PrefixBytes.Add(new XAttribute("Index", STR.Prefix_bytes.IndexOf(A)));
                             PrefixBytes.Add(new XAttribute("Type", A.Type));
-                            Prefix.Add(PrefixBytes);
+                            String.Add(PrefixBytes);
                         }
-                        Prefix.Add(new XElement("PrefixString", STR.Prefix));
 
-                        XElement Old_String = new XElement("Old");
-                        String.Add(Old_String);
                         foreach (var A in STR.Old_string_bytes)
                         {
                             XElement OldStringBytes = new XElement("OldStringBytes", BitConverter.ToString(A.Bytes));
                             OldStringBytes.Add(new XAttribute("Index", STR.Old_string_bytes.IndexOf(A)));
                             OldStringBytes.Add(new XAttribute("Type", A.Type));
-                            Old_String.Add(OldStringBytes);
+                            String.Add(OldStringBytes);
                         }
-                        Old_String.Add(new XElement("OldString", STR.Old_string));
 
-                        XElement New_String = new XElement("New");
-                        String.Add(New_String);
-                        foreach (var A in STR.New_string_bytes)
-                        {
-                            XElement NewStringBytes = new XElement("NewStringBytes", BitConverter.ToString(A.Bytes));
-                            NewStringBytes.Add(new XAttribute("Index", STR.New_string_bytes.IndexOf(A)));
-                            NewStringBytes.Add(new XAttribute("Type", A.Type));
-                            New_String.Add(NewStringBytes);
-                        }
-                        New_String.Add(new XElement("NewString", STR.New_string));
+                        String.Add(new XElement("NewString", STR.New_string));
 
-                        XElement Postfix = new XElement("Postfix");
-                        String.Add(Postfix);
                         foreach (var A in STR.Postfix_bytes)
                         {
                             XElement PostfixBytes = new XElement("PostfixBytes", BitConverter.ToString(A.Bytes));
                             PostfixBytes.Add(new XAttribute("Index", STR.Postfix_bytes.IndexOf(A)));
                             PostfixBytes.Add(new XAttribute("Type", A.Type));
-                            Postfix.Add(PostfixBytes);
+                            String.Add(PostfixBytes);
                         }
-                        Postfix.Add(new XElement("PostfixString", STR.Postfix));
                     }
 
                     MES.Add(Msg);
@@ -1327,8 +1343,13 @@ namespace PersonaText
         {
             try
             {
-                XDocument xDoc = XDocument.Load(path);
+                XDocument xDoc = XDocument.Load(path, LoadOptions.PreserveWhitespace);
                 XElement MSG1 = xDoc.Element("MSG1");
+                XAttribute temp = MSG1.Attribute("Position");
+                Static.FileInfo.SelectPosition = temp != null ? Convert.ToInt32(temp.Value) : -1;
+
+                temp = MSG1.Attribute("SourceFileName");
+                Static.FileInfo.SourceFileName = temp != null ? temp.Value : "";
 
                 foreach (var NAME in MSG1.Element("CharacterNames").Elements())
                 {
@@ -1340,17 +1361,10 @@ namespace PersonaText
                     {
                         OldNameSource = Enumerable.Range(0, OldNameSource_str.Split('-').Length).Select(x => Convert.ToByte(OldNameSource_str.Split('-')[x], 16)).ToArray();
                     }
-                    string OldName = NAME.Element("OldName").Value;
 
-                    byte[] NewNameSource = new byte[0];
-                    string NewNameByte_str = NAME.Element("NewNameByte").Value;
-                    if (NewNameByte_str != "")
-                    {
-                        NewNameSource = Enumerable.Range(0, NewNameByte_str.Split('-').Length).Select(x => Convert.ToByte(NewNameByte_str.Split('-')[x], 16)).ToArray();
-                    }
                     string NewName = NAME.Element("NewName").Value;
 
-                    name.Add(new PersonaText.name { Index = Index, Old_Name_Bytes = OldNameSource, Old_Name = OldName, New_Name_Bytes = NewNameSource, New_Name = NewName });
+                    name.Add(new name { Index = Index, Old_Name_Bytes = OldNameSource, New_Name = NewName });
                 }
 
                 foreach (var Message in MSG1.Element("MSG").Elements())
@@ -1374,7 +1388,7 @@ namespace PersonaText
 
                         String.Index = Convert.ToInt32(Strings.Attribute("Index").Value);
 
-                        foreach (var PrefixByte in Strings.Element("Prefix").Elements("PrefixBytes"))
+                        foreach (var PrefixByte in Strings.Elements("PrefixBytes"))
                         {
                             int PrefixIndex = Convert.ToInt32(PrefixByte.Attribute("Index").Value);
                             string PrefixType = PrefixByte.Attribute("Type").Value;
@@ -1389,7 +1403,7 @@ namespace PersonaText
                             String.Prefix_bytes.Add(new MyByteArray { Index = PrefixIndex, Type = PrefixType, Bytes = PrefixBytes });
                         }
 
-                        foreach (var Old in Strings.Element("Old").Elements("OldStringBytes"))
+                        foreach (var Old in Strings.Elements("OldStringBytes"))
                         {
                             int OldIndex = Convert.ToInt32(Old.Attribute("Index").Value);
                             string OldType = Old.Attribute("Type").Value;
@@ -1403,25 +1417,10 @@ namespace PersonaText
 
                             String.Old_string_bytes.Add(new MyByteArray { Index = OldIndex, Type = OldType, Bytes = OldBytes });
                         }
-                        String.Old_string = Strings.Element("Old").Element("OldString").Value;
 
-                        foreach (var New in Strings.Element("New").Elements("NewStringBytes"))
-                        {
-                            int NewIndex = Convert.ToInt32(New.Attribute("Index").Value);
-                            string NewType = New.Attribute("Type").Value;
+                        String.New_string = Strings.Element("NewString").Value;
 
-                            byte[] NewBytes = new byte[0];
-                            string NewBytes_str = New.Value;
-                            if (NewBytes_str != "")
-                            {
-                                NewBytes = Enumerable.Range(0, NewBytes_str.Split('-').Length).Select(x => Convert.ToByte(NewBytes_str.Split('-')[x], 16)).ToArray();
-                            }
-
-                            String.New_string_bytes.Add(new MyByteArray { Index = NewIndex, Type = NewType, Bytes = NewBytes });
-                        }
-                        String.New_string = Strings.Element("New").Element("NewString").Value;
-
-                        foreach (var PostfixByte in Strings.Element("Postfix").Elements("PostfixBytes"))
+                        foreach (var PostfixByte in Strings.Elements("PostfixBytes"))
                         {
                             int PostfixIndex = Convert.ToInt32(PostfixByte.Attribute("Index").Value);
                             string PostfixType = PostfixByte.Attribute("Type").Value;
@@ -1447,6 +1446,298 @@ namespace PersonaText
                 MessageBox.Show(e.ToString());
             }
         }
+    }
 
+    public class PersonaFileTypes
+    {
+        public class PM1
+        {
+            class Header
+            {
+                #region Values
+                private int _Size;
+                public int Size { get { return _Size; } }
+
+                private long _Name;
+                public long Name { get { return _Name; } }
+
+                private int _TableLineCount;
+                public int TableLineCount { get { return _TableLineCount; } }
+
+                private int _Unknown;
+                public int Unknown { get { return _Unknown; } }
+                #endregion Values
+
+                public Header(MemoryStream header)
+                {
+                    header.Position = 4;
+                    _Size = header.ReadInt();
+                    _Name = header.ReadLong();
+                    _TableLineCount = header.ReadInt();
+                    _Unknown = header.ReadInt();
+                }
+
+                public MemoryStream GetMS()
+                {
+                    MemoryStream returned = new MemoryStream();
+                    returned.WriteInt(0);
+                    returned.WriteInt(_Size);
+                    returned.WriteLong(_Name);
+                    returned.WriteInt(_TableLineCount);
+                    returned.WriteInt(_Unknown);
+                    returned.WriteLong(0);
+
+                    returned.Position = 0;
+                    return returned;
+                }
+
+                public void Shift(int shift)
+                {
+                    _Size += shift;
+                }
+            }
+
+            class Table
+            {
+                public class Element
+                {
+                    public int Index { get; set; } = -1;
+                    public int Size { get; set; } = 0;
+                    public int Count { get; set; } = 0;
+                    public int Position { get; set; } = 0;
+
+                    public Element(int index, int size, int count, int position)
+                    {
+                        Index = index;
+                        Size = size;
+                        Count = count;
+                        Position = position;
+                    }
+                }
+
+                private List<Element> _PM1Table = new List<Element>();
+                public List<Element> PM1Table { get { return _PM1Table; } }
+
+                public Table(int[][] array)
+                {
+                    for (int i = 0; i < array.Length; i++)
+                        _PM1Table.Add(new Element(array[i][0], array[i][1], array[i][2], array[i][3]));
+                }
+
+                public MemoryStream GetMS()
+                {
+                    MemoryStream returned = new MemoryStream();
+
+                    foreach (var line in _PM1Table)
+                    {
+                        returned.WriteInt(line.Index);
+                        returned.WriteInt(line.Size);
+                        returned.WriteInt(line.Count);
+                        returned.WriteInt(line.Position);
+                    }
+
+                    returned.Position = 0;
+                    return returned;
+                }
+
+                public void Shift(int shift)
+                {
+                    _PM1Table.FindAll(x => x.Index > 0x6).ForEach(a => a.Position += shift);
+                }
+            }
+
+            private class MapElement
+            {
+                public string Name { get; set; }
+                public int Index { get; set; }
+
+            }
+            private static List<MapElement> Map = new List<MapElement>()
+            {
+                new MapElement { Index = 0x1, Name = "File List" },
+                new MapElement { Index = 0x3, Name = "RMD Header List"},
+                new MapElement { Index = 0x6, Name = "MSG" },
+                new MapElement { Index = 0x7, Name = "EPL Header List" },
+                new MapElement { Index = 0x8, Name = "EPL" },
+                new MapElement { Index = 0x9, Name = "RMD" }
+            };
+
+            Header _Header;
+            Table _Table;
+
+            class PM1element
+            {
+                public string Name { get; set; }
+                public List<MemoryStream> StreamList { get; set; }
+            }
+
+            List<PM1element> PM1List = new List<PM1element>();
+
+            public PM1(string SourceFile)
+            {
+                FileStream FileStream = new FileStream(SourceFile, FileMode.Open, FileAccess.Read);
+                _Header = new Header(new MemoryStream(FileStream.ReadByteArray(0x20)));
+                _Table = new Table(FileStream.ReadIntArrayArray(_Header.TableLineCount, 4));
+
+                foreach (var element in _Table.PM1Table)
+                {
+                    if (element.Size * element.Count > 0)
+                    {
+                        MapElement tempmap = Map.Find(x => x.Index == element.Index);
+                        if (tempmap != null)
+                        {
+                            PM1element temp = new PM1element();
+                            temp.Name = tempmap.Name;
+                            temp.StreamList = GetListMS(FileStream, element);
+                            PM1List.Add(temp);
+                        }
+                        else
+                        {
+                            MessageBox.Show("PM1: unknown element");
+                            return;
+                        }
+                    }
+                }
+
+
+
+            }
+
+            private List<MemoryStream> GetListMS(FileStream FS, Table.Element line)
+            {
+                List<MemoryStream> returned = new List<MemoryStream>();
+                FS.Position = line.Position;
+
+                for (int i = 0; i < line.Count; i++)
+                {
+                    returned.Add(new MemoryStream(FS.ReadByteArray(line.Size)));
+                }
+
+                return returned;
+            }
+
+            public void SaveNewPM1(string FileName)
+            {
+                using (FileStream FS = new FileStream(FileName, FileMode.Create, FileAccess.ReadWrite))
+                {
+                    _Header.GetMS().CopyTo(FS);
+                    _Table.GetMS().CopyTo(FS);
+                    foreach (var a in PM1List)
+                    {
+                        foreach (var b in a.StreamList)
+                        {
+                            b.Position = 0;
+                            b.CopyTo(FS);
+                        }
+                    }
+                }
+            }
+
+            public void SetNewMSG1(MemoryStream NewMSG)
+            {
+                int SizeShift = ChangeMSG(NewMSG);
+                ShiftEPLHeader(SizeShift);
+                ShiftRMDHeader(SizeShift);
+                _Table.Shift(SizeShift);
+                _Header.Shift(SizeShift);
+            }
+
+            private int ChangeMSG(MemoryStream NewMSG)
+            {
+                PM1element temp = PM1List.Find(x => x.Name == "MSG");
+                if (temp != null)
+                {
+                    if (temp.StreamList.Count == 1)
+                    {
+                        MemoryStream newMSG = new MemoryStream();
+                        NewMSG.CopyTo(newMSG);
+                        while (newMSG.Length % 16 != 0)
+                        {
+                            newMSG.WriteByte(0);
+                        }
+
+                        int SizeShift = Convert.ToInt32(newMSG.Length - temp.StreamList.First().Length);
+                        temp.StreamList.Clear();
+                        temp.StreamList.Add(newMSG);
+
+                        _Table.PM1Table.Find(x => x.Index == 0x6).Size = (int)newMSG.Length;
+                        return SizeShift;
+                    }
+                    else if (temp.StreamList.Count > 1)
+                    {
+                        MessageBox.Show("Exception: 2 or more MSG");
+                        return -1;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Exception: 0 MSG");
+                        return -1;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("File does not contain MSG");
+                    return -1;
+                }
+            }
+
+            private void ShiftEPLHeader(int shift)
+            {
+                PM1element temp = PM1List.Find(x => x.Name == "EPL Header List");
+                if (temp != null)
+                {
+                    if (temp.StreamList.Count >= 1)
+                    {
+                        foreach (var EPL in temp.StreamList)
+                        {
+                            EPL.Position = 4;
+                            int Size = EPL.ReadInt();
+                            Size += shift;
+                            EPL.Position = 4;
+                            EPL.WriteInt(Size);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Exception: 0 EPL Header");
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("File does not contain EPL Header");
+                    return;
+                }
+            }
+
+            private void ShiftRMDHeader(int shift)
+            {
+                PM1element temp = PM1List.Find(x => x.Name == "RMD Header List");
+                if (temp != null)
+                {
+                    if (temp.StreamList.Count >= 1)
+                    {
+                        foreach (var RMD in temp.StreamList)
+                        {
+                            RMD.Position = 0x10;
+                            int Size = RMD.ReadInt();
+                            Size += shift;
+                            RMD.Position = 0x10;
+                            RMD.WriteInt(Size);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Exception: 0 EPL Header");
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("File does not contain EPL Header");
+                    return;
+                }
+            }
+        }
     }
 }

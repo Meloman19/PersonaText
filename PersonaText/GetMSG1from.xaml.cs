@@ -22,7 +22,6 @@ namespace PersonaText
     public partial class GetMSG1from : Window
     {
         public bool Select = false;
-        public int Select_Index = -1;
 
         public MemoryStream MS;
         public ObservableVariableParseMSG1 OVP = new ObservableVariableParseMSG1();
@@ -92,7 +91,7 @@ namespace PersonaText
             ListBox temp = (ListBox)sender;
             long Position = (long)temp.SelectedItem;
             MS = OVP.MSG1.GetMSG1fromFile(OVP.FileName, Position);
-            Select_Index = OVP.MSG1Position.IndexOf(Position);
+            Static.FileInfo.SelectPosition = Position;
             this.Close();
         }
     }

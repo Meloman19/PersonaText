@@ -15,7 +15,7 @@ namespace PersonaText
 
             if (e.Args.Length > 0)
             {
-                MW.Import_Path = e.Args[0];
+                Static.FileInfo.OpenFullFileName = e.Args[0];
             }
 
             MW.Show();

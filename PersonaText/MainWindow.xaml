@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PersonaText"
         mc:Ignorable="d"
         
-        Title="Persona Text Editor" Height="440.755" Width="803.431" WindowStartupLocation="CenterScreen" Loaded="MW_Loaded">
+        Title="Persona Text Editor" Height="440.755" Width="803.431" WindowStartupLocation="CenterScreen" Loaded="MW_Loaded" Closing="MW_Closing">
 
     <Window.Resources>
         <local:CharacterIndexConverter x:Key="MyConverter"/>
@@ -29,10 +29,10 @@
 
         <Menu Grid.Row="0" x:Name="mainmenu">
             <MenuItem Header="File">
-                <MenuItem Header="Open Project" Name="mm_openproject" Click="mi_openproject_Click" ></MenuItem>
-                <MenuItem Header="Save Project" IsEnabled="{Binding openfile}" Name="mm_saveproject" Click="mi_saveproject_click" ></MenuItem>
+                <MenuItem Header="Open Project" Name="mm_openproject" Click="OpenProject_Click" ></MenuItem>
+                <MenuItem Header="Save Project" IsEnabled="{Binding openfile}" Name="mm_saveproject" Click="SaveProject_click" ></MenuItem>
                 <Separator></Separator>
-                <MenuItem Header="Import" Name="mi_import" Click="mi_import_click"></MenuItem>
+                <MenuItem Header="Import" Name="mi_import" Click="Import_click"></MenuItem>
             </MenuItem>
             <MenuItem Header="Tools">
                 <MenuItem Header="Extract text from..." Name="mm_tools_export" Click="mm_tools_export_Click"></MenuItem>
@@ -49,16 +49,17 @@
 
             <Border Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,1,1">
                 <Menu  x:Name="menuold" Background="#FFF0F0F0">
-                    <MenuItem Header="Open OLD FNT" Name="Old_FNT_Open" Click="FNold"></MenuItem>
-                    <MenuItem Header="Set Char" Name="Old_Char_Set" Click="CharSet_old"></MenuItem>
+                    <MenuItem Header="Open OLD FNT" Name="Old_FNT_Open" Click="OpenOldFONT"></MenuItem>
+                    <MenuItem Header="Set Char" Name="Old_Char_Set" Click="SetOldChar"></MenuItem>
                     <MenuItem IsEnabled="{Binding openfile}" Header="Save as Text" Name="Old_Save" Click="STold"></MenuItem>
                 </Menu>
             </Border>
             <Border Grid.Column="2" BorderBrush="Black" BorderThickness="1,1,0,1">
                 <Menu  x:Name="menunew">
-                    <MenuItem Header="Open NEW FNT" Name="New_FNT_Open" Click="FNnew"></MenuItem>
-                    <MenuItem Header="Set Char" Name="New_Char_Set" Click="CharSet_new"></MenuItem>
-                    <MenuItem Header="Save as MSG1" Name="New_Save" Click="New_Save_Click"></MenuItem>
+                    <MenuItem Header="Open NEW FNT" Name="New_FNT_Open" Click="OpenNewFONT"></MenuItem>
+                    <MenuItem Header="Set Char" Name="New_Char_Set" Click="SetNewChar"></MenuItem>
+                    <MenuItem Header="Save as New MSG1" Click="SaveNewMSG1_Click"></MenuItem>
+                    <MenuItem Header="Save as.." Click="SaveNewFile_Click"></MenuItem>
                 </Menu>
             </Border>
         </Grid>

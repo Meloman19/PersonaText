@@ -8,11 +8,19 @@ using Microsoft.Win32;
 using System.ComponentModel;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
     public class Static
     {
+        public static class FileInfo
+        {
+            public static string SourceFileName = "";
+            public static string OpenFullFileName = "";
+            public static long SelectPosition = -1;
+        }
+
         public static Settings Setting = new Settings();
         public static PersonaType Personas = new PersonaType();
         public static class FontMap
@@ -28,9 +36,8 @@ namespace PersonaText
     {
         public MSG1 MSG1 = new MSG1();
         ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow();
-        List<string> ComboBox = new List<string>() { "Persona 3 FES", "Persona 4" };
+        List<string> ComboBox = new List<string>() { "Persona 3", "Persona 4" };
 
-        public string Import_Path = "";
         Text Text = new Text();
 
         public MainWindow()
@@ -39,22 +46,22 @@ namespace PersonaText
 
             ScrollViewer.DataContext = MSG1;
             mainmenu.DataContext = OVMW;
-
-            if (File.Exists(@"OLD.TXT"))
+            string path = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
+            if (File.Exists(path + "OLD.TXT"))
             {
-                Text.ReadFNMP(@"OLD.TXT", ref Static.FontMap.old_char);
+                Text.ReadFNMP(path + "OLD.TXT", ref Static.FontMap.old_char);
             }
-            if (File.Exists(@"NEW.TXT"))
+            if (File.Exists(path + "NEW.TXT"))
             {
-                Text.ReadFNMP(@"NEW.TXT", ref Static.FontMap.new_char);
+                Text.ReadFNMP(path + "NEW.TXT", ref Static.FontMap.new_char);
             }
-            if (File.Exists(@"OLD.FNT"))
+            if (File.Exists(path + "OLD.FNT"))
             {
-                Text.ReadFN(@"OLD.FNT", ref Static.FontMap.old_char);
+                Text.ReadFN(path + "OLD.FNT", ref Static.FontMap.old_char);
             }
-            if (File.Exists(@"NEW.FNT"))
+            if (File.Exists(path + @"NEW.FNT"))
             {
-                Text.ReadFN(@"NEW.FNT", ref Static.FontMap.new_char);
+                Text.ReadFN(path + "NEW.FNT", ref Static.FontMap.new_char);
             }
 
             Text.ReadShift(ref Static.FontMap.char_shift);
@@ -63,9 +70,9 @@ namespace PersonaText
             Static.FontMap.new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
 
             Combobox_Gametype.DataContext = ComboBox;
-            if(Static.Setting.Get("GameType") == "P3FES")
+            if (Static.Setting.Get("GameType") == "P3")
             {
-                Combobox_Gametype.SelectedIndex = ComboBox.IndexOf("Persona 3 FES");
+                Combobox_Gametype.SelectedIndex = ComboBox.IndexOf("Persona 3");
             }
             else
             {
@@ -73,100 +80,75 @@ namespace PersonaText
             }
         }
 
-        private string[] OpenFiles()
-        {
-            string[] str = new string[0];
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "PMD files (*.PM1)|*.PM1|All files (*.*)|*.*";
-            ofd.Multiselect = true;
-            if (ofd.ShowDialog() == true)
-            {
-                foreach (string filename in ofd.FileNames)
-                {
-                    Array.Resize<string>(ref str, str.Length + 1);
-                    str[str.Length - 1] = filename;
-                }
-            }
-            return str;
-        }
+        #region MainMenu
 
-        private void mi_import_click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "All files|*.*";
-            if (ofd.ShowDialog() == true)
-            {
-                Import_Path = ofd.FileName;
-                open_file();
-            }
-        }
-
-        private void open_file()
-        {
-            OVMW.openfile = true;
-            MSG1.ParseMSG1(Import_Path, false);
-            MSG1.UpdateString();
-            this.Title = MSG1.SelectIndex >= 0 ? "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + "]" : "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + "]";
-        }
-
-        private void open_project()
-        {
-            OVMW.openfile = true;
-            Project Pr = new Project(Import_Path);
-            Pr.OpenProject();
-            MSG1.msg.Clear();
-            MSG1.name.Clear();
-            foreach (var MSG in Pr.msg)
-            {
-                MSG1.msg.Add(MSG);
-            }
-            foreach (var NAME in Pr.name)
-            {
-                MSG1.name.Add(NAME);
-            }
-            this.Title = "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + "]";
-        }
-
-        private void mi_saveproject_click(object sender, RoutedEventArgs e)
-        {
-            SaveFileDialog sfd = new SaveFileDialog();
-            sfd.FileName = MSG1.SelectIndex >= 0 ? Path.GetFileNameWithoutExtension(Import_Path) + " - " + Convert.ToString(MSG1.SelectIndex).PadLeft(3, '0') + ".PTP" : Path.GetFileNameWithoutExtension(Import_Path) + ".PTP";
-            sfd.Filter = "Persona Text Project (*.PTP)|*.PTP";
-            if (sfd.ShowDialog() == true)
-            {
-                Project Pr = new Project(sfd.SafeFileName);
-                Pr.name = MSG1.name.ToList();
-                Pr.msg = MSG1.msg.ToList();
-                Pr.SaveProject();
-            }
-        }
-
-        private void mi_openproject_Click(object sender, RoutedEventArgs e)
+        #region File
+        private void OpenProject_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = "Persona Text Project (*.PTP)|*.PTP";
             if (ofd.ShowDialog() == true)
             {
-                OVMW.openfile = true;
-                Import_Path = ofd.FileName;
-                Project Pr = new Project(Import_Path);
-                Pr.OpenProject();
-                MSG1.msg.Clear();
-                MSG1.name.Clear();
-                foreach (var MSG in Pr.msg)
-                {
-                    MSG1.msg.Add(MSG);
-                }
-                foreach (var NAME in Pr.name)
-                {
-                    MSG1.name.Add(NAME);
-                }
-
-                this.Title = "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Import_Path) + "]";
+                Static.FileInfo.OpenFullFileName = ofd.FileName;
+                open_project();
             }
         }
 
-        private void FNold(object sender, RoutedEventArgs e)
+        private void SaveProject_click(object sender, RoutedEventArgs e)
+        {
+            save_project();
+        }
+
+        private void Import_click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "All files|*.*";
+            if (ofd.ShowDialog() == true)
+            {
+                Static.FileInfo.OpenFullFileName = ofd.FileName;
+                open_file();
+            }
+        }
+
+        #endregion File
+
+        #region Tools
+        private void mm_tools_export_Click(object sender, RoutedEventArgs e)
+        {
+            Tool_Export TE = new PersonaText.Tool_Export();
+            TE.Owner = this;
+            this.Visibility = Visibility.Collapsed;
+            TE.ShowDialog();
+            this.Visibility = Visibility.Visible;
+        }
+
+        private void mm_tools_visual_Click(object sender, RoutedEventArgs e)
+        {
+            Tool_Visual TV = new Tool_Visual();
+            TV.Owner = this;
+            TV.ShowDialog();
+        }
+        #endregion Tools
+
+        private void Combobox_Gametype_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems[0].ToString() == "Persona 3")
+            {
+                Static.Setting.Set("GameType", "P3");
+                Static.SelectedGameType = "P3";
+            }
+            else
+            {
+                Static.Setting.Set("GameType", "P4");
+                Static.SelectedGameType = "P4";
+            }
+        }
+
+        #endregion MainMenu
+
+        #region Old Font
+
+        private void OpenOldFONT(object sender, RoutedEventArgs e)
         {
             string path;
             OpenFileDialog ofd = new OpenFileDialog();
@@ -188,7 +170,40 @@ namespace PersonaText
             }
         }
 
-        private void FNnew(object sender, RoutedEventArgs e)
+        private void SetOldChar(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                CharSet CS = new CharSet(Static.FontMap.old_char);
+                CS.Owner = this;
+                if (CS.ShowDialog() == true)
+                {
+                    Text.WriteFNMP(@"OLD.TXT", ref Static.FontMap.old_char);
+                    MSG1.UpdateString();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void STold(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.FileName = Path.GetFileNameWithoutExtension(Static.FileInfo.OpenFullFileName) + ".TXT";
+            sfd.Filter = "Text (.txt)|*.txt";
+            if (sfd.ShowDialog() == true)
+            {
+                MSG1.SaveAsText(sfd.FileName, "", 2);
+            }
+        }
+
+        #endregion Old Font
+
+        #region New Font
+
+        private void OpenNewFONT(object sender, RoutedEventArgs e)
         {
             string path;
             OpenFileDialog ofd = new OpenFileDialog();
@@ -210,25 +225,7 @@ namespace PersonaText
             }
         }
 
-        private void CharSet_old(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                CharSet CS = new CharSet(Static.FontMap.old_char);
-                CS.Owner = this;
-                if (CS.ShowDialog() == true)
-                {
-                    Text.WriteFNMP(@"OLD.TXT", ref Static.FontMap.old_char);
-                    MSG1.UpdateString();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
-        private void CharSet_new(object sender, RoutedEventArgs e)
+        private void SetNewChar(object sender, RoutedEventArgs e)
         {
             this.Visibility = Visibility.Hidden;
 
@@ -249,43 +246,15 @@ namespace PersonaText
             this.Visibility = Visibility.Visible;
         }
 
-        private void STold(object sender, RoutedEventArgs e)
-        {
-            SaveFileDialog sfd = new SaveFileDialog();
-            sfd.FileName = Path.GetFileNameWithoutExtension(Import_Path) + ".TXT";
-            sfd.Filter = "Text (.txt)|*.txt";
-            if (sfd.ShowDialog() == true)
-            {
-                MSG1.SaveAsText(sfd.FileName, "", 2);
-            }
-        }
-
-        private void mm_tools_export_Click(object sender, RoutedEventArgs e)
-        {
-            Tool_Export TE = new PersonaText.Tool_Export();
-            TE.Owner = this;
-            this.Visibility = Visibility.Collapsed;
-            TE.ShowDialog();
-            this.Visibility = Visibility.Visible;
-        }
-
-        private void mm_tools_visual_Click(object sender, RoutedEventArgs e)
-        {
-            Tool_Visual TV = new Tool_Visual();
-            TV.Owner = this;
-            TV.ShowDialog();
-        }
+        #endregion New Font
 
         private void MW_Loaded(object sender, RoutedEventArgs e)
         {
-
-
-            if (Import_Path != "")
+            if (Static.FileInfo.OpenFullFileName != "")
             {
-                if (File.Exists(Import_Path))
+                if (File.Exists(Static.FileInfo.OpenFullFileName))
                 {
-                    OVMW.openfile = true;
-                    FileInfo FI = new FileInfo(Import_Path);
+                    FileInfo FI = new FileInfo(Static.FileInfo.OpenFullFileName);
                     if (FI.Extension == ".PTP")
                     {
                         open_project();
@@ -298,25 +267,93 @@ namespace PersonaText
             }
         }
 
-        private void New_Save_Click(object sender, RoutedEventArgs e)
+        private void MW_Closing(object sender, CancelEventArgs e)
         {
-            if (Import_Path != "")
+            if (OVMW.openfile)
             {
-                MSG1.SaveAsNewMSG1(Import_Path);
+                MessageBoxResult a = MessageBox.Show("Save Project?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (a == MessageBoxResult.Yes)
+                {
+                    save_project();
+                }
             }
         }
 
-        private void Combobox_Gametype_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void open_project()
         {
-            if (e.AddedItems[0].ToString() == "Persona 3 FES")
+            OVMW.openfile = true;
+            Project Pr = new Project(Static.FileInfo.OpenFullFileName);
+            Pr.OpenProject();
+            MSG1.msg.Clear();
+            MSG1.name.Clear();
+            foreach (var MSG in Pr.msg)
             {
-                Static.Setting.Set("GameType", "P3FES");
-                Static.SelectedGameType = "P3FES";
+                MSG1.msg.Add(MSG);
+            }
+            foreach (var NAME in Pr.name)
+            {
+                MSG1.name.Add(NAME);
+            }
+
+            set_title();
+        }
+
+        private void save_project()
+        {
+            string Name = Static.FileInfo.SelectPosition >= 0 ? Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + ".PTP"
+                : Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + ".PTP";
+            Project Pr = new Project(Name);
+            Pr.name = MSG1.name.ToList();
+            Pr.msg = MSG1.msg.ToList();
+            Pr.SaveProject();
+        }
+
+        private void open_file()
+        {
+            OVMW.openfile = true;
+            Static.FileInfo.SourceFileName = Path.GetFileName(Static.FileInfo.OpenFullFileName);
+
+            MSG1.ParseMSG1(Static.FileInfo.OpenFullFileName, false);
+            MSG1.UpdateString();
+
+            set_title();
+        }
+
+        private void set_title()
+        {
+            if (Static.FileInfo.SelectPosition >= 0)
+            {
+                this.Title = "Persona Text Editor - [" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + "]";
             }
             else
             {
-                Static.Setting.Set("GameType", "P4");
-                Static.SelectedGameType = "P4";
+                this.Title = "Persona Font Editor - [" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "]";
+            }
+        }
+
+        private void SaveNewMSG1_Click(object sender, RoutedEventArgs e)
+        {
+            MemoryStream MS = MSG1.GetNewMSG1();
+            string Name = Static.FileInfo.SelectPosition >= 0 ? Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + "_NEW.MSG1"
+                : Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.MSG1";
+            MS.SaveToFile(Name);
+        }
+
+        private void SaveNewFile_Click(object sender, RoutedEventArgs e)
+        {
+            FileInfo[] FI = new DirectoryInfo(Path.GetDirectoryName(Static.FileInfo.OpenFullFileName)).GetFiles(Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + ".*");
+            foreach (var a in FI)
+            {
+                if (a.Extension == ".BMD")
+                {
+                    MemoryStream MS = MSG1.GetNewMSG1();
+                    Util.SaveToBMD(MS, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.BMD");
+                }
+                else if (a.Extension == ".PM1")
+                {
+                    MemoryStream MS = MSG1.GetNewMSG1();
+                    Util.SaveToPM1(MS, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Static.FileInfo.SourceFileName, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.PM1");
+                }
             }
         }
     }

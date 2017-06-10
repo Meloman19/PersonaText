@@ -50,13 +50,23 @@ namespace PersonaText
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextBox TB = sender as TextBox;
-            VisualText.GetBitmapList(TB.Text, ref CharList, System.Drawing.Color.White);
+            List<MyByteArray> temp = TB.Text.GetMyByteArray(CharList);
+
+            string text = "";
+            foreach (var a in temp)
+                if (a.Bytes.Length != 0)
+                    text += BitConverter.ToString(a.Bytes).Replace('-', ' ') + " ";
+
+            HEX.Text = text;
+
+            VisualText.GetBitmapList(temp, CharList, System.Drawing.Color.White);
         }
 
         private void TextBox_NameChanged(object sender, TextChangedEventArgs e)
         {
             TextBox TB = sender as TextBox;
-            VisualName.GetBitmapList(TB.Text, ref CharList, System.Drawing.Color.Black);
+            List<MyByteArray> temp = TB.Text.GetMyByteArray(CharList);
+            VisualName.GetBitmapList(temp, CharList, System.Drawing.Color.Black);
         }
 
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
