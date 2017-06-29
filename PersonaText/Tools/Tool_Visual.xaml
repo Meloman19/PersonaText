@@ -1,4 +1,4 @@
-﻿<Window x:Class="PersonaText.Tool_Visual"
+﻿<Window x:Class="PersonaText.ToolVisual"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -32,12 +32,9 @@
                 <ColumnDefinition Width="Auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
 
-            <Menu Grid.Column="0" Name="mainmenu">
-                <MenuItem Header="File"></MenuItem>
-                <ComboBox Grid.Column="1" Name="ComboBox_Font" SelectionChanged="ComboBox_Font_SelectionChanged" ItemsSource="{Binding}" DisplayMemberPath="Text" SelectedIndex="0" />
-            </Menu>
+            <ComboBox Background="#FFF0F0F0" Grid.Column="1" Name="ComboBox_Font" SelectionChanged="ComboBox_Font_SelectionChanged" ItemsSource="{Binding}" DisplayMemberPath="Text" SelectedIndex="0" />
 
-            
+
             <ComboBox Visibility="Hidden" Grid.Column="2" Name="ComboBox" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding}" DisplayMemberPath="Text" SelectedIndex="0" />
         </Grid>
 

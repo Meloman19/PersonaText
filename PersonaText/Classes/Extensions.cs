@@ -2,17 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Xml.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
-    public static class ObservableCollectionExtentsion
+    static class ObservableCollectionExtentsion
     {
         public static void AddChar(this List<byte> ByteList, char Char, List<fnmp> FontMap)
         {
@@ -220,7 +218,7 @@ namespace PersonaText
             {
                 foreach (var MSG in ByteCollection)
                 {
-                    returned += MSG.GetSystem(CharList);
+                    returned += MSG.GetSystem();
                 }
             }
             else
@@ -242,7 +240,7 @@ namespace PersonaText
             {
                 foreach (var MSG in ByteCollection)
                 {
-                    returned += MSG.GetSystem(CharList);
+                    returned += MSG.GetSystem();
                 }
             }
             else
@@ -257,7 +255,242 @@ namespace PersonaText
         }
     }
 
-    public static class StreamExtension
+    static class ListExtentsion
+    {
+        public static void ReadFNMP(this List<fnmp> list, string filename)
+        {
+            try
+            {
+                StreamReader sr = new StreamReader(new FileStream(filename, FileMode.Open));
+
+                while (sr.EndOfStream == false)
+                {
+                    string str = sr.ReadLine();
+
+                    int Index = Convert.ToInt32(str.Substring(0, str.IndexOf('=')));
+                    string Char = str.Substring(str.IndexOf('=') + 1);
+
+                    if (list.Exists(x => x.Index == Index))
+                    {
+                        fnmp fnmp = list.Find(x => x.Index == Index);
+                        fnmp.Char = Char;
+                    }
+                    else
+                    {
+                        list.Add(new PersonaText.fnmp { Index = Index, Char = Char });
+                    }
+                }
+
+                sr.Dispose();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        public static void WriteFNMP(this List<fnmp> list, string filename)
+        {
+            try
+            {
+                StreamWriter sw = new StreamWriter(new FileStream(filename, FileMode.Create));
+
+                foreach (var CL in list)
+                {
+                    if (CL.Char != "")
+                    {
+                        string str = Convert.ToString(CL.Index) + "=" + Convert.ToString(CL.Char);
+                        sw.WriteLine(str);
+                        sw.Flush();
+                    }
+                }
+
+                sw.Dispose();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        public static void ReadFONT(this List<fnmp> list, string filename)
+        {
+            try
+            {
+                FileStream FONT = new FileStream(filename, FileMode.Open, FileAccess.Read);
+                MemoryStream FontDec = new MemoryStream();
+
+                int MainHeaderSize = FONT.ReadInt();
+                FONT.Position = 0xE;
+                int TotalNumberOfGlyphs = FONT.ReadUshort();
+                ushort GlyphSize_1 = FONT.ReadUshort();
+                ushort GlyphSize_2 = FONT.ReadUshort();
+                ushort GlyphSizeInByte = FONT.ReadUshort();
+                byte BitPerPixel = Convert.ToByte((double)(GlyphSizeInByte * 8) / (GlyphSize_1 * GlyphSize_2));
+                int NumberOfColor = Convert.ToInt32(Math.Pow(2, BitPerPixel));
+
+                int GlyphCutTable_Pos = MainHeaderSize + NumberOfColor * 4 + 4;
+                FONT.Position = GlyphCutTable_Pos - 4;
+                int GlyphCutTable_Size = FONT.ReadInt();
+
+                int UnknownPos = GlyphCutTable_Pos + GlyphCutTable_Size + 4;
+                FONT.Position = UnknownPos - 4;
+                int UnknownSize = FONT.ReadInt();
+
+                int ReservedPos = UnknownPos + UnknownSize;
+                int ReservedSize = TotalNumberOfGlyphs * 4;
+
+                int DictionaryHeader_Pos = ReservedPos + ReservedSize;
+
+                FONT.Position = DictionaryHeader_Pos;
+                int DictionaryHeader_Size = FONT.ReadInt();
+                int Dictionary_Size = FONT.ReadInt();
+                int CompressedFontBlock_Size = FONT.ReadInt();
+                int Dictionary_Pos = DictionaryHeader_Pos + DictionaryHeader_Size;
+
+                FONT.Position = DictionaryHeader_Pos + 24;
+                int GlyphPositionTable_Size = FONT.ReadInt();
+
+                FONT.Position = Dictionary_Pos;
+
+                int[,] Dictionary = new int[Dictionary_Size / 6, 2];
+                for (int i = 0; i < Dictionary_Size / 6; i++)
+                {
+                    FONT.Position = FONT.Position + 2;
+                    Dictionary[i, 0] = FONT.ReadUshort();
+                    Dictionary[i, 1] = FONT.ReadUshort();
+                }
+
+                int CompressedFontBlock_Pos = Dictionary_Pos + Dictionary_Size + GlyphPositionTable_Size;
+
+                FONT.Position = CompressedFontBlock_Pos;
+
+                int temp = 0;
+                for (int m = 0; m < CompressedFontBlock_Size; m += 2)
+                {
+                    int s4 = FONT.ReadUshort();
+                    for (int i = 0; i < 16; i++)
+                    {
+                        temp =  Dictionary[temp, s4 % 2];
+                        s4 = s4 >> 1;
+
+                        if (Dictionary[temp, 0] == 0)
+                        {
+                            int a = Dictionary[temp, 1];
+
+                            if (BitPerPixel == 4)
+                            {
+                                a = (a >> 4) + (a - (a >> 4 << 4) << 4);
+                            }
+
+                            FontDec.WriteByte((byte)a);
+                            temp = 0; 
+                        }
+                    }
+                }
+
+                FONT.Position = MainHeaderSize;
+
+                List<Color> ColorBMP = new List<Color>();
+                for (int i = 0; i < NumberOfColor; i++)
+                {
+                    byte r = (byte)FONT.ReadByte();
+                    byte g = (byte)FONT.ReadByte();
+                    byte b = (byte)FONT.ReadByte();
+                    byte a = (byte)FONT.ReadByte();
+                    ColorBMP.Add(Color.FromArgb(a, r, g, b));
+                }
+                BitmapPalette ColorPaletteBMP = new BitmapPalette(ColorBMP);
+
+                FontDec.Position = 0;
+
+                FONT.Position = GlyphCutTable_Pos;
+                byte[,] GlyphCut = new byte[TotalNumberOfGlyphs, 2];
+                for (int i = 0; i < TotalNumberOfGlyphs; i++)
+                {
+                    GlyphCut[i, 0] = (byte)FONT.ReadByte();
+                    GlyphCut[i, 1] = (byte)FONT.ReadByte();
+                }
+
+                int k = 32;
+
+                double ko = (double)BitPerPixel / 8;
+                int size = Convert.ToInt32(GlyphSize_1 * GlyphSize_1 * ko);
+
+                try
+                {
+                    byte[] data = new byte[size];
+                    FontDec.Read(data, 0, size);
+
+                    BitmapSource BMP = BitmapSource.Create(32, 32, 96, 96, PixelFormats.Indexed4, ColorPaletteBMP, data, 16);
+
+                    if (list.Exists(x => x.Index == k))
+                    {
+                        fnmp fnmp = list.Find(x => x.Index == k);
+                        fnmp.Cut = new MyByte { Left = Convert.ToByte(GlyphCut[0, 0] + 5), Right = Convert.ToByte(GlyphCut[0, 1] - 5) };
+                        fnmp.Image = BMP;
+                        fnmp.Image_data = data;
+                    }
+                    else
+                    {
+                        list.Add(new fnmp { Index = k, Char = "", Cut = new MyByte { Left = Convert.ToByte(GlyphCut[0, 0] + 5), Right = Convert.ToByte(GlyphCut[0, 1] - 5) }, Image = BMP, Image_data = data });
+                    }
+
+                    k++;
+                }
+                catch
+                {
+
+                }
+
+                for (int i = 1; i < TotalNumberOfGlyphs; i++)
+                {
+                    byte[] data = new byte[size];
+                    FontDec.Read(data, 0, size);
+
+                    BitmapSource BMP = BitmapSource.Create(32, 32, 96, 96, PixelFormats.Indexed4, ColorPaletteBMP, data, 16);
+
+                    if (list.Exists(x => x.Index == k))
+                    {
+                        fnmp fnmp = list.Find(x => x.Index == k);
+                        fnmp.Cut = new MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] };
+                        fnmp.Image = BMP;
+                        fnmp.Image_data = data;
+                    }
+                    else
+                    {
+                        list.Add(new fnmp { Index = k, Char = "", Cut = new MyByte { Left = GlyphCut[i, 0], Right = GlyphCut[i, 1] }, Image = BMP, Image_data = data });
+                    }
+
+                    k++;
+                }
+
+                FontDec.Close();
+                FONT.Close();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        public static void ReadShift(this List<glyphYshift> list)
+        {
+            list.Add(new glyphYshift { Index = 81, Shift = 2 });
+            list.Add(new glyphYshift { Index = 103, Shift = 2 });
+            list.Add(new glyphYshift { Index = 106, Shift = 2 });
+            list.Add(new glyphYshift { Index = 112, Shift = 2 });
+            list.Add(new glyphYshift { Index = 113, Shift = 2 });
+            list.Add(new glyphYshift { Index = 121, Shift = 2 });
+        }
+
+        public static IList<T> Clone<T>(this IList<T> listToClone) where T : ICloneable
+        {
+            return listToClone.Select(item => (T)item.Clone()).ToList();
+        }
+    }
+
+    static class StreamExtension
     {
         public static void WriteLong(this Stream stream, long number)
         {
@@ -325,6 +558,14 @@ namespace PersonaText
             }
         }
 
+        public static void WriteIntArray(this Stream stream, int[] Number)
+        {
+            foreach (var N in Number)
+            {
+                stream.WriteInt(N);
+            }
+        }
+
         public static void WriteUshort(this Stream Stream, int Number)
         {
             Stream.WriteUshort((ushort)Number);
@@ -354,7 +595,7 @@ namespace PersonaText
         public static string ReadString(this Stream stream, int length)
         {
             byte[] buffer = stream.ReadByteArray(length);
-            return System.Text.Encoding.ASCII.GetString(buffer.Where(x=>x!=0).ToArray());
+            return System.Text.Encoding.ASCII.GetString(buffer.Where(x => x != 0).ToArray());
         }
         public static void WriteString(this Stream Stream, string String, int Length)
         {
@@ -498,30 +739,20 @@ namespace PersonaText
             }
             else { return true; }
         }
-    }
 
-    public static class MemoryStreamExtension
-    {
-        public static void SaveToFile(this MemoryStream MemoryStream, string Path)
+        public static void SaveToFile(this Stream stream, string Path)
         {
-
-            try
+            using (FileStream FS = new FileStream(Path, FileMode.Create, FileAccess.ReadWrite))
             {
-                FileStream FS = new FileStream(Path, FileMode.Create, FileAccess.ReadWrite);
-                long temp = MemoryStream.Position;
-                MemoryStream.Position = 0;
-                MemoryStream.CopyTo(FS);
-                FS.Close();
+                long temp = stream.Position;
+                stream.Position = 0;
+                stream.CopyTo(FS);
+                stream.Position = temp;
             }
-            catch
-            {
-
-            }
-
         }
     }
 
-    public static class ByteArrayExtension
+    static class ByteArrayExtension
     {
         public static bool CheckEntrance(this byte[] B, byte[] Bytes, int StartIndex)
         {
@@ -544,7 +775,7 @@ namespace PersonaText
         }
     }
 
-    public static class StringExtension
+    static class StringExtension
     {
         public static byte[] GetEncodeByte(this string String, List<fnmp> FontMap)
         {
@@ -580,7 +811,6 @@ namespace PersonaText
         {
             List<MyByteArray> MyByteArrayList = new List<MyByteArray>();
 
-            List<byte> LB = new List<byte>();
             int Index = 0;
 
             string[] split = Regex.Split(String, "(\r\n|\r|\n)");
@@ -629,6 +859,4 @@ namespace PersonaText
             return MyByteArrayList;
         }
     }
-
-
 }

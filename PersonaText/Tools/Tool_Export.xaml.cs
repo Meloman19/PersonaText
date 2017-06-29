@@ -10,12 +10,12 @@ using System.Diagnostics;
 
 namespace PersonaText
 {
-    public partial class Tool_Export : Window
+    public partial class ToolExport : Window
     {
-        public ObservableVariableExport OVE = new ObservableVariableExport();
-        public Thread thread;
+        ObservableVariableExport OVE = new ObservableVariableExport();
+        Thread thread;
 
-        public Tool_Export()
+        public ToolExport()
         {
             InitializeComponent();
             DataContext = OVE;
@@ -36,15 +36,17 @@ namespace PersonaText
 
         private void Folder_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.FolderBrowserDialog fbd = new System.Windows.Forms.FolderBrowserDialog();
-            fbd.ShowNewFolderButton = false;
-            fbd.SelectedPath = "d:\\PS2\\EVENT";
-            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            using (System.Windows.Forms.FolderBrowserDialog fbd = new System.Windows.Forms.FolderBrowserDialog())
             {
-                getlist(fbd.SelectedPath, ref OVE.FileList);
-
-                ThreadStart();
+                fbd.ShowNewFolderButton = false;
+                fbd.SelectedPath = "d:\\PS2\\EVENT";
+                if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    getlist(fbd.SelectedPath, ref OVE.FileList);
+                    ThreadStart();
+                }
             }
+
         }
 
         private void getlist(string path, ref List<string> FL)
@@ -103,7 +105,7 @@ namespace PersonaText
         }
     }
 
-    public class ObservableVariableExport : INotifyPropertyChanged
+    class ObservableVariableExport : INotifyPropertyChanged
     {
         public bool Abort_total = false;
         public bool Abort = false;
@@ -265,13 +267,9 @@ namespace PersonaText
 
             string FileName = obj as string;
 
-            Text Text = new PersonaText.Text();
-
-            byte[] buffer = new byte[4];
-
             FileStream FS_getLMS = new FileStream(FileName, FileMode.Open, FileAccess.Read);
 
-            byte[] Bytes = new byte[] { 0x4D, 0x53, 0x47, 0x31, 0x00, 0x00, 0x00, 0x00 };
+            byte[] buffer = new byte[] { 0x4D, 0x53, 0x47, 0x31, 0x00, 0x00, 0x00, 0x00 };
 
             FS_getLMS_length = FS_getLMS.Length;
             while (FS_getLMS.Position != FS_getLMS.Length)
@@ -285,7 +283,7 @@ namespace PersonaText
                 }
 
                 FS_getLMS_pos = FS_getLMS.Position;
-                if (FS_getLMS.CheckEntrance(Bytes))
+                if (FS_getLMS.CheckEntrance(buffer))
                 {
                     MSG1Position.Add(FS_getLMS.Position - 16);
                 }

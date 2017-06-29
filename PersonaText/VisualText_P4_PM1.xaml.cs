@@ -14,9 +14,9 @@ using System.Windows.Shapes;
 
 namespace PersonaText
 {
-    public partial class VisualText_P4_PM1 : Page
+    public partial class VisualTextP4PM1 : Page
     {
-        public VisualText_P4_PM1()
+        public VisualTextP4PM1()
         {
             InitializeComponent();
         }

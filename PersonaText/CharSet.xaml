@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
 
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-            <ItemsControl Name="wrap" ItemsSource="{Binding CharList}">
+            <ItemsControl Name="wrap" ItemsSource="{Binding}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Background="Black"/>

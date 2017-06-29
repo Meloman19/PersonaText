@@ -14,18 +14,18 @@ namespace PersonaText
 {
     public class CharacterIndexConverter : IMultiValueConverter
     {
-        public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            int Index = (int)value[0];
-            MainWindow MW = (MainWindow)value[1];
-            if (MW.MSG1.name.Count > Index)
+            int Index = (int)values[0];
+            MainWindow MW = (MainWindow)values[1];
+            if (MW.NameCount > Index)
             {
-                return MW.MSG1.name[Index].Old_Name;
+                return MW.OldNameByIndex(Index);
             }
             else { return "<NO_NAME>"; }
         }
 
-        public object[] ConvertBack(object value, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object[] ConvertBack(object values, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new NotImplementedException();
         }
@@ -63,11 +63,11 @@ namespace PersonaText
 
     public class ConverterXpos : IMultiValueConverter
     {
-        public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
 
-            double pos = (double)value[0];
-            double heigth = (double)value[1];
+            double pos = (double)values[0];
+            double heigth = (double)values[1];
             if (parameter.ToString() == "Name")
             {
                 heigth = heigth * 0.9375;
@@ -80,7 +80,7 @@ namespace PersonaText
             return (pos / 32) * heigth;
         }
 
-        public object[] ConvertBack(object value, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object[] ConvertBack(object values, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new NotImplementedException();
         }
@@ -88,10 +88,10 @@ namespace PersonaText
 
     public class ConverterYpos : IMultiValueConverter
     {
-        public object Convert(object[] value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            double pos = (double)value[0];
-            double heigth = (double)value[1];
+            double pos = (double)values[0];
+            double heigth = (double)values[1];
             if (parameter.ToString() == "Name")
             {
             }
@@ -102,7 +102,7 @@ namespace PersonaText
             return (pos / 32) * heigth;
         }
 
-        public object[] ConvertBack(object value, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object[] ConvertBack(object values, Type[] targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new NotImplementedException();
         }

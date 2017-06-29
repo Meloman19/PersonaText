@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
-    public class Static
+    static class Static
     {
         public static class FileInfo
         {
@@ -29,16 +29,16 @@ namespace PersonaText
             public static List<fnmp> new_char = new List<fnmp>();
             public static List<glyphYshift> char_shift = new List<glyphYshift>();
         }
-        public static string SelectedGameType = "";
     }
 
     public partial class MainWindow : Window
     {
-        public MSG1 MSG1 = new MSG1();
+        public int NameCount { get { return MSG1.name.Count; } }
+        public string OldNameByIndex(int index) { return MSG1.name[index].Old_Name; }
+
+        MSG1 MSG1 = new MSG1();
         ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow();
         List<string> ComboBox = new List<string>() { "Persona 3", "Persona 4" };
-
-        Text Text = new Text();
 
         public MainWindow()
         {
@@ -49,28 +49,28 @@ namespace PersonaText
             string path = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
             if (File.Exists(path + "OLD.TXT"))
             {
-                Text.ReadFNMP(path + "OLD.TXT", ref Static.FontMap.old_char);
+                Static.FontMap.old_char.ReadFNMP(path + "OLD.TXT");
             }
             if (File.Exists(path + "NEW.TXT"))
             {
-                Text.ReadFNMP(path + "NEW.TXT", ref Static.FontMap.new_char);
+                Static.FontMap.new_char.ReadFNMP(path + "NEW.TXT");
             }
             if (File.Exists(path + "OLD.FNT"))
             {
-                Text.ReadFN(path + "OLD.FNT", ref Static.FontMap.old_char);
+                Static.FontMap.old_char.ReadFONT(path + "OLD.FNT");
             }
             if (File.Exists(path + @"NEW.FNT"))
             {
-                Text.ReadFN(path + "NEW.FNT", ref Static.FontMap.new_char);
+                Static.FontMap.new_char.ReadFONT(path + "NEW.FNT");
             }
 
-            Text.ReadShift(ref Static.FontMap.char_shift);
+            Static.FontMap.char_shift.ReadShift();
 
             Static.FontMap.old_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
             Static.FontMap.new_char.Sort((a, b) => (a.Index.CompareTo(b.Index)));
 
             Combobox_Gametype.DataContext = ComboBox;
-            if (Static.Setting.Get("GameType") == "P3")
+            if (Static.Setting.GameType == GameType.P3)
             {
                 Combobox_Gametype.SelectedIndex = ComboBox.IndexOf("Persona 3");
             }
@@ -115,7 +115,7 @@ namespace PersonaText
         #region Tools
         private void mm_tools_export_Click(object sender, RoutedEventArgs e)
         {
-            Tool_Export TE = new PersonaText.Tool_Export();
+            ToolExport TE = new PersonaText.ToolExport();
             TE.Owner = this;
             this.Visibility = Visibility.Collapsed;
             TE.ShowDialog();
@@ -124,7 +124,7 @@ namespace PersonaText
 
         private void mm_tools_visual_Click(object sender, RoutedEventArgs e)
         {
-            Tool_Visual TV = new Tool_Visual();
+            ToolVisual TV = new ToolVisual();
             TV.Owner = this;
             TV.ShowDialog();
         }
@@ -134,13 +134,11 @@ namespace PersonaText
         {
             if (e.AddedItems[0].ToString() == "Persona 3")
             {
-                Static.Setting.Set("GameType", "P3");
-                Static.SelectedGameType = "P3";
+                Static.Setting.GameType = GameType.P3;
             }
             else
             {
-                Static.Setting.Set("GameType", "P4");
-                Static.SelectedGameType = "P4";
+                Static.Setting.GameType = GameType.P4;
             }
         }
 
@@ -165,7 +163,7 @@ namespace PersonaText
                     }
                 }
 
-                Text.ReadFN(path, ref Static.FontMap.old_char);
+                Static.FontMap.old_char.ReadFONT(path);
                 File.Copy(path, @"OLD.FNT", true);
             }
         }
@@ -178,7 +176,7 @@ namespace PersonaText
                 CS.Owner = this;
                 if (CS.ShowDialog() == true)
                 {
-                    Text.WriteFNMP(@"OLD.TXT", ref Static.FontMap.old_char);
+                    Static.FontMap.old_char.WriteFNMP(@"OLD.TXT");
                     MSG1.UpdateString();
                 }
             }
@@ -220,7 +218,7 @@ namespace PersonaText
                     }
                 }
 
-                Text.ReadFN(path, ref Static.FontMap.new_char);
+                Static.FontMap.new_char.ReadFONT(path);
                 File.Copy(path, @"NEW.FNT", true);
             }
         }
@@ -235,7 +233,7 @@ namespace PersonaText
                 CS.Owner = this;
                 if (CS.ShowDialog() == true)
                 {
-                    Text.WriteFNMP(@"NEW.TXT", ref Static.FontMap.new_char);
+                    Static.FontMap.new_char.WriteFNMP(@"NEW.TXT");
                 }
             }
             catch (Exception ex)
@@ -250,6 +248,23 @@ namespace PersonaText
 
         private void MW_Loaded(object sender, RoutedEventArgs e)
         {
+            open();
+        }
+
+        private void MW_Closing(object sender, CancelEventArgs e)
+        {
+            if (OVMW.openfile)
+            {
+                MessageBoxResult a = MessageBox.Show("Save Project?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (a == MessageBoxResult.Yes)
+                {
+                    save_project();
+                }
+            }
+        }
+
+        private void open()
+        {
             if (Static.FileInfo.OpenFullFileName != "")
             {
                 if (File.Exists(Static.FileInfo.OpenFullFileName))
@@ -263,18 +278,6 @@ namespace PersonaText
                     {
                         open_file();
                     }
-                }
-            }
-        }
-
-        private void MW_Closing(object sender, CancelEventArgs e)
-        {
-            if (OVMW.openfile)
-            {
-                MessageBoxResult a = MessageBox.Show("Save Project?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (a == MessageBoxResult.Yes)
-                {
-                    save_project();
                 }
             }
         }
@@ -333,10 +336,12 @@ namespace PersonaText
 
         private void SaveNewMSG1_Click(object sender, RoutedEventArgs e)
         {
-            MemoryStream MS = MSG1.GetNewMSG1();
-            string Name = Static.FileInfo.SelectPosition >= 0 ? Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + "_NEW.MSG1"
+            using (MemoryStream MS = MSG1.GetNewMSG1)
+            {
+                string Name = Static.FileInfo.SelectPosition >= 0 ? Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + "_NEW.MSG1"
                 : Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.MSG1";
-            MS.SaveToFile(Name);
+                MS.SaveToFile(Name);
+            }
         }
 
         private void SaveNewFile_Click(object sender, RoutedEventArgs e)
@@ -346,19 +351,31 @@ namespace PersonaText
             {
                 if (a.Extension == ".BMD")
                 {
-                    MemoryStream MS = MSG1.GetNewMSG1();
+                    MemoryStream MS = MSG1.GetNewMSG1;
                     Util.SaveToBMD(MS, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.BMD");
                 }
                 else if (a.Extension == ".PM1")
                 {
-                    MemoryStream MS = MSG1.GetNewMSG1();
+                    MemoryStream MS = MSG1.GetNewMSG1;
                     Util.SaveToPM1(MS, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Static.FileInfo.SourceFileName, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.PM1");
                 }
             }
         }
+
+        private void MW_Drop(object sender, DragEventArgs e)
+        {
+
+            var a = ((DataObject)e.Data).GetFileDropList();
+            var b = a.Count > 0 ? a[0] : null;
+            if (!string.IsNullOrEmpty(b))
+            {
+                Static.FileInfo.OpenFullFileName = b;
+                open();
+            }
+        }
     }
 
-    public class ObservableVariableMainWindow : INotifyPropertyChanged
+    class ObservableVariableMainWindow : INotifyPropertyChanged
     {
         #region INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler PropertyChanged;

@@ -15,18 +15,42 @@ using System.Text.RegularExpressions;
 
 namespace PersonaText
 {
-    public class Settings
+    public enum GameType
     {
-        public class CurrentSettings : Settings
+        P3,
+        P4,
+    }
+
+    class Settings
+    {
+        public GameType GameType
         {
+            get
+            {
+                string temp = CurrentSettings.Find(x => x.Name == "GameType").Value;
+                if (String.Equals(temp, "P3"))
+                {
+                    return GameType.P3;
+                }
+                else
+                {
+                    return GameType.P4;
+                }
+            }
+            set
+            {
+                if (value == GameType.P3)
+                {
+                    CurrentSettings.Find(x => x.Name == "GameType").Value = "P3";
+                }
+                else
+                {
+                    CurrentSettings.Find(x => x.Name == "GameType").Value = "P4";
+                }
+            }
         }
 
-        public static class DefaultSettings
-        {
-            
-        }
-
-        public class StringSettings
+        private class StringSettings
         {
             public string Name { get; set; }
             public string Value { get; set; }
@@ -38,14 +62,14 @@ namespace PersonaText
             }
         }
 
-        public List<StringSettings> _CurrentSettings { get; set; } = new List<StringSettings>();
+        private List<StringSettings> CurrentSettings { get; set; } = new List<StringSettings>();
 
         private void Initialization()
         {
-            _CurrentSettings.Add(new StringSettings("GameType", "P4"));
+            CurrentSettings.Add(new StringSettings("GameType", "P4"));
         }
 
-        public void CreateSettingsFile()
+        private void CreateSettingsFile()
         {
             try
             {
@@ -54,9 +78,9 @@ namespace PersonaText
                 XDoc.Add(Setting);
                 XElement Strings = new XElement("Strings");
                 Setting.Add(Strings);
-                foreach (var a in _CurrentSettings) { Strings.Add(new XElement(a.Name, a.Value)); }
+                foreach (var a in CurrentSettings) { Strings.Add(new XElement(a.Name, a.Value)); }
 
-                XDoc.Save( Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\PersonaText.xml");
+                XDoc.Save(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\PersonaText.xml");
             }
             catch (Exception e)
             {
@@ -76,7 +100,7 @@ namespace PersonaText
                         {
                             foreach (var c in b.Elements())
                             {
-                                StringSettings temp = _CurrentSettings.Find(x => x.Name == c.Name);
+                                StringSettings temp = CurrentSettings.Find(x => x.Name == c.Name);
                                 if (temp != null)
                                 {
                                     temp.Value = c.Value;
@@ -87,26 +111,7 @@ namespace PersonaText
                 }
             }
         }
-
-        public string Get(string Name)
-        {
-            return _CurrentSettings.Find(x => x.Name == Name).Value;
-        }
-
-        public void Set(string Name, string Value)
-        {
-            StringSettings temp = _CurrentSettings.Find(x => x.Name == Name);
-            if (temp != null)
-            {
-                temp.Value = Value;
-                CreateSettingsFile();
-            }
-            else
-            {
-                MessageBox.Show("SetSetting fail");
-            }
-        }
-
+        
         public Settings()
         {
             Initialization();
@@ -122,7 +127,7 @@ namespace PersonaText
             }
             catch (System.Security.SecurityException)
             {
-                MessageBox.Show("Permissions problem: used default setting");
+                MessageBox.Show("Permissions problem: using default setting");
             }
             catch (Exception e)
             {

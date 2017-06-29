@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.IO;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Timers;
 using System.Diagnostics;
@@ -19,20 +13,21 @@ using System.Threading;
 
 namespace PersonaText
 {
-    public partial class GetMSG1from : Window
+    public partial class GetMSG1From : Window
     {
         public bool Select = false;
 
         public MemoryStream MS;
-        public ObservableVariableParseMSG1 OVP = new ObservableVariableParseMSG1();
+        ObservableVariableParseMSG1 OVP = new ObservableVariableParseMSG1();
         public Thread thread;
 
-        public GetMSG1from()
+        public GetMSG1From(string fileName)
         {
             InitializeComponent();
             thread = new Thread(OVP.Thread_Work);
             thread.IsBackground = true;
             DataContext = OVP;
+            OVP.FileName = fileName;
             OVP.timer.Elapsed += OVP.Timer_Elapsed;
         }
 
@@ -96,7 +91,7 @@ namespace PersonaText
         }
     }
 
-    public class ObservableVariableParseMSG1 : INotifyPropertyChanged
+    class ObservableVariableParseMSG1 : INotifyPropertyChanged
     {
         public MSG1 MSG1 = new MSG1();
 
@@ -198,8 +193,6 @@ namespace PersonaText
         {
             sw.Start();
             timer.Start();
-
-            Text Text = new PersonaText.Text();
 
             byte[] buffer = new byte[4];
 

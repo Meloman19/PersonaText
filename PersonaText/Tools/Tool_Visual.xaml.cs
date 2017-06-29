@@ -16,7 +16,7 @@ using System.ComponentModel;
 
 namespace PersonaText
 {
-    public partial class Tool_Visual : Window
+    public partial class ToolVisual : Window
     {
         private List<fnmp> CharList = new List<fnmp>();
 
@@ -34,7 +34,7 @@ namespace PersonaText
         public ObservableCollection<ComboBoxList> PageList = new ObservableCollection<ComboBoxList>();
         public ObservableCollection<ComboBoxList> FontList = new ObservableCollection<ComboBoxList>();
 
-        public Tool_Visual()
+        public ToolVisual()
         {
             InitializeComponent();
 
