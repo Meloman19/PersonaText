@@ -1507,8 +1507,8 @@ namespace PersonaText
                     for (int i = 3; i < FLW0Table.Count; i++)
                     {
                         returned.WriteInt(FLW0Table[i].Index);
-                        returned.WriteInt(FLW0Table[i].Size);
                         returned.WriteInt(FLW0Table[i].Count);
+                        returned.WriteInt(FLW0Table[i].Size);
                         returned.WriteInt(FLW0Table[i].Position);
                     }
 
@@ -1623,10 +1623,6 @@ namespace PersonaText
                         MemoryStream newMSG = new MemoryStream();
 
                         NewMSG.CopyTo(newMSG);
-                        while (newMSG.Length % 16 != 0)
-                        {
-                            newMSG.WriteByte(0);
-                        }
 
                         int SizeShift = Convert.ToInt32(newMSG.Length - temp.StreamList.First().Length);
                         temp.StreamList.Clear();
