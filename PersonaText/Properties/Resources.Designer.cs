@@ -59,15 +59,5 @@ namespace PersonaText.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap Persona4Dialog {
-            get {
-                object obj = ResourceManager.GetObject("Persona4Dialog", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
     }
 }

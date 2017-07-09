@@ -1,36 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows;
-using System.IO;
-using System.Drawing;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
+﻿using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Collections;
+using System.Linq;
 
 namespace PersonaText
 {
     public partial class CharSet : Window
     {
-        List<fnmp> chlt = new List<fnmp>();
-        ObservableCollection<fnmp> CharList { get; set; } = new ObservableCollection<fnmp>();
+        CharList chlt;
+        BindingList<FnMpImg> CharList { get; set; } = new BindingList<FnMpImg>();
 
         public CharSet(object cl)
         {
-            List<fnmp> CharL = cl as List<fnmp>;
-            chlt = CharL;
+            chlt = cl as CharList;
             InitializeComponent();
             DataContext = CharList;
-
-            foreach (var C in CharL)
+            foreach (var C in chlt.List)
             {
-                CharList.Add(new fnmp { Index = C.Index, Image = C.Image, Char = C.Char });
+                CharList.Add(new FnMpImg
+                {
+                    Index = C.Index,
+                    Image = BitmapSource.Create(chlt.Width, chlt.Height, 96, 96, PixelFormats.Indexed4, chlt.Palette, C.Image_data, 16),
+                    Char = C.Char
+                });
             }
         }
 
@@ -38,7 +32,7 @@ namespace PersonaText
         {
             foreach (var CL in CharList)
             {
-                fnmp CL2 = chlt.Find(x => x.Index == CL.Index);
+                FnMpData CL2 = chlt.List.FirstOrDefault(x => x.Index == CL.Index);
                 CL2.Char = CL.Char;
             }
 
@@ -51,7 +45,7 @@ namespace PersonaText
             this.Close();
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
             if (this.DialogResult != true)
             {
@@ -60,6 +54,7 @@ namespace PersonaText
                     save();
                 }
             }
+            CharList.Clear();
         }
     }
 }

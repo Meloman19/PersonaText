@@ -4,7 +4,8 @@ using System.Linq;
 using System.IO;
 using System.Xml.Linq;
 using System.Windows;
-using System.Collections.ObjectModel;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
@@ -12,6 +13,23 @@ namespace PersonaText
 {
     static class Util
     {
+        public static BitmapPalette CreatePallete(Color color)
+        {
+            List<Color> ColorBMP = new List<Color>();
+            ColorBMP.Add(new Color { A = 0, R = 0, G = 0, B = 0 });
+            for (int i = 1; i < 16; i++)
+            {
+                ColorBMP.Add(new Color
+                {
+                    A = Util.ByteTruncate(i * 0x10),
+                    R = color.R,
+                    G = color.G,
+                    B = color.B
+                });
+            }
+            return new BitmapPalette(ColorBMP);
+        }
+
         public static byte ByteTruncate(int value)
         {
             if (value < 0) { return 0; }
@@ -42,66 +60,79 @@ namespace PersonaText
 
         public static void SaveToPM1(MemoryStream NewMSG1, string SourceFile, string FileName)
         {
-            //PersonaFileTypes.PMD1 PM1 = new PersonaFileTypes.PMD1(SourceFile);
-            //PM1.SetNewMSG1(NewMSG1);
-            //PM1.SaveNewPM1(FileName);
+            PersonaFileTypes.PMD1 PM1 = new PersonaFileTypes.PMD1(SourceFile);
+            PM1.SetNewMSG1(NewMSG1);
+            PM1.SaveNew(FileName);
+        }
+
+        public static void SaveToBF(MemoryStream NewMSG1, string SourceFile, string FileName)
+        {
+            PersonaFileTypes.FLW0 FLW0 = new PersonaFileTypes.FLW0(SourceFile);
+            FLW0.SetNewMSG1(NewMSG1);
+            FLW0.SaveNew(FileName);
+        }
+
+        public static arrayType GetType(string type)
+        {
+            if (type == "System")
+            {
+                return arrayType.System;
+            }
+            else if (type == "Text")
+            {
+                return arrayType.Text;
+            }
+            else
+            {
+                return arrayType.Empty;
+            }
         }
     }
 
+    delegate name GetString(int index);
+
     class MSG1
     {
+        public MSG1()
+        {
+            name.ListChanged += Name_ListChanged;
+            msg.ListChanged += Msg_ListChanged;
+        }
+
+        private void Msg_ListChanged(object sender, ListChangedEventArgs e)
+        {
+            if (e.ListChangedType == ListChangedType.ItemAdded)
+            {
+                foreach (var a in name)
+                {
+                    if (a.Index == msg[e.NewIndex].Character_Index)
+                    {
+                        msg[e.NewIndex].Name_PropertyChanged(a, new PropertyChangedEventArgs("CreateEventName"));
+                    }
+                }
+            }
+        }
+
+        private void Name_ListChanged(object sender, ListChangedEventArgs e)
+        {
+            if (e.ListChangedType == ListChangedType.ItemAdded)
+            {
+                foreach (var a in msg)
+                {
+                    if (a.Character_Index == e.NewIndex)
+                    {
+                        a.Name_PropertyChanged(name[e.NewIndex], new PropertyChangedEventArgs("CreateEventName"));
+                    }
+                }
+            }
+        }
+
         public int SaveAsTextOption { get; set; } = 0;
 
-        //#region INotifyPropertyChanged implementation
-        //public event PropertyChangedEventHandler PropertyChanged;
-
-        //protected void Notify(string propertyName)
-        //{
-        //    if (this.PropertyChanged != null)
-        //    {
-        //        PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-        //    }
-        //}
-        //#endregion INotifyPropertyChanged implementation
-
-        //private BindingList<msg> _msg = new BindingList<msg>();
-        //public BindingList<msg> msg
-        //{
-        //    get
-        //    {
-        //        return _msg;
-        //    }
-        //    set
-        //    {
-        //        if (value != _msg)
-        //        {
-        //            _msg = value;
-        //            Notify("msg");
-        //        }
-        //    }
-        //}
-
-        //private BindingList<name> _name = new BindingList<name>();
-        //public BindingList<name> name
-        //{
-        //    get
-        //    {
-        //        return _name;
-        //    }
-        //    set
-        //    {
-        //        if (value != _name)
-        //        {
-        //            _name = value;
-        //            Notify("name");
-        //        }
-        //    }
-        //}
-
-        private MemoryStream MS_MSG1;
+        MemoryStream MS_MSG1;
 
         public BindingList<msg> msg { get; set; } = new BindingList<msg>();
-        public BindingList<name> name { get; set; } = new BindingList<PersonaText.name>();
+        public BindingList<name> name { get; set; } = new BindingList<name>();
 
         public void ParseMSG1(string FileName, bool SaveMSG1)
         {
@@ -112,11 +143,11 @@ namespace PersonaText
                 if (SaveMSG1)
                 {
                     if (Static.FileInfo.SelectPosition >= 0) { SaveAsMSG1(FileName, " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0'), MS_MSG1); }
-                    else { SaveAsMSG1(FileName, "", MS_MSG1); }
+                    else { SaveAsMSG1(FileName, MS_MSG1); }
                 }
                 MS_MSG1.Position = 0;
                 ParseMSG1(MS_MSG1);
-                UpdateString();
+                //UpdateString();
             }
         }
 
@@ -133,7 +164,7 @@ namespace PersonaText
                         MS.Position = 0;
 
                         ParseMSG1(MS);
-                        UpdateString();
+                        // UpdateString();
                         SaveAsText(FileName, Convert.ToString(LMS.IndexOf(MS)).PadLeft(3, '0'), SaveAsTextOption);
                     }
                 }
@@ -143,12 +174,12 @@ namespace PersonaText
                 MemoryStream MS = LMS[0];
                 if (MS != null)
                 {
-                    if (SaveMSG1) { SaveAsMSG1(FileName, "", MS); }
+                    if (SaveMSG1) { SaveAsMSG1(FileName, MS); }
 
                     MS.Position = 0;
 
                     ParseMSG1(MS);
-                    UpdateString();
+                    //UpdateString();
                     SaveAsText(FileName, "000", SaveAsTextOption);
                 }
             }
@@ -156,7 +187,7 @@ namespace PersonaText
 
         #region ParseMSG1
 
-        public MemoryStream GetMSG1(string FileName)
+        MemoryStream GetMSG1(string FileName)
         {
             byte[] buffer = new byte[4];
             using (FileStream FS = new FileStream(FileName, FileMode.Open, FileAccess.Read))
@@ -269,7 +300,7 @@ namespace PersonaText
             return returned;
         }
 
-        private void ParseMSG1(MemoryStream ms)
+        void ParseMSG1(MemoryStream ms)
         {
             ms.Position = 0;
             try
@@ -311,7 +342,7 @@ namespace PersonaText
                         Bytes.Add(Byte);
                         Byte = (byte)ms.ReadByte();
                     }
-                    name.Add(new name { Index = Index, Old_Name_Bytes = Bytes.ToArray() });
+                    name.Add(new name { Index = Index, OldNameBytes = Bytes.ToArray() });
                     Index++;
                 }
 
@@ -364,11 +395,9 @@ namespace PersonaText
                     }
 
                     msg.Add(new msg { Index = Index, Character_Index = Character_Index, Type = Type, Name = MSG_Name, SourceBytes = MSG_bytes, Strings = ParseString(MSG_bytes) });
+
                     Index++;
                 }
-
-
-
             }
             catch (Exception e)
             {
@@ -377,23 +406,24 @@ namespace PersonaText
             }
         }
 
-        private ObservableCollection<MyString> ParseString(byte[] SourceBytes)
+        BindingList<MyString> ParseString(byte[] SourceBytes)
         {
-            ObservableCollection<MyString> returned = new ObservableCollection<MyString>();
+            BindingList<MyString> returned = new BindingList<MyString>();
 
             int Index = 0;
             foreach (var Bytes in SplitSourceBytes(SourceBytes))
             {
-                List<MyByteArray> temp = Parse_STRING(Bytes);
-                ObservableCollection<MyByteArray> Prefix = new ObservableCollection<MyByteArray>();
-                ObservableCollection<MyByteArray> Postfix = new ObservableCollection<MyByteArray>();
-                ObservableCollection<MyByteArray> Strings = new ObservableCollection<MyByteArray>();
+                List<MyByteArray> temp = new List<MyByteArray>();
+                temp.parseString(Bytes);
+                BindingList<MyByteArray> Prefix = new BindingList<MyByteArray>();
+                BindingList<MyByteArray> Postfix = new BindingList<MyByteArray>();
+                BindingList<MyByteArray> Strings = new BindingList<MyByteArray>();
 
                 List<int> Indexes = new List<int>();
 
                 for (int i = 0; i < temp.Count; i++)
                 {
-                    if (temp[i].Type == "System")
+                    if (temp[i].Type == arrayType.System)
                     {
                         Prefix.Add(temp[i]);
                         Indexes.Add(temp.IndexOf(temp[i]));
@@ -407,7 +437,7 @@ namespace PersonaText
 
                 for (int i = temp.Count - 1; i >= 0; i--)
                 {
-                    if (temp[i].Type == "System")
+                    if (temp[i].Type == arrayType.System)
                     {
                         Postfix.Add(temp[i]);
                         Indexes.Add(temp.IndexOf(temp[i]));
@@ -418,7 +448,7 @@ namespace PersonaText
                     }
                 }
 
-                Postfix = new ObservableCollection<MyByteArray>(Postfix.Reverse());
+                Postfix = new BindingList<MyByteArray>(Postfix.Reverse().ToList());
 
                 for (int i = 0; i < temp.Count; i++)
                 {
@@ -429,20 +459,23 @@ namespace PersonaText
                 }
 
                 returned.Add(new MyString() { Index = Index, Old_string_bytes = Strings, Postfix_bytes = Postfix, Prefix_bytes = Prefix });
+
                 Index++;
             }
 
             return returned;
         }
 
-        private List<byte[]> SplitSourceBytes(byte[] B)
+        List<byte[]> SplitSourceBytes(byte[] B)
         {
             List<byte[]> returned = new List<byte[]>();
+
+            byte[] LineSplit = B.Take((B[0] - 0xF0) * 2).ToArray();
 
             List<byte> temp2 = new List<byte>();
             for (int i = 0; i < B.Length; i++)
             {
-                if (B.CheckEntrance(Static.Personas[Static.Setting.GameType].LineSplit, i))
+                if (B.CheckEntrance(LineSplit, i))
                 {
                     if (temp2.Count != 0)
                     {
@@ -463,81 +496,7 @@ namespace PersonaText
             return returned;
         }
 
-        private List<MyByteArray> Parse_STRING(byte[] B)
-        {
-            List<MyByteArray> returned = new List<MyByteArray>();
-
-            string type = "Text";
-            List<byte> temp = new List<byte>();
-
-            for (int i = 0; i < B.Length; i++)
-            {
-                if (0x20 <= B[i] & B[i] < 0x80)
-                {
-                    temp.Add(B[i]);
-                }
-                else if (0x80 <= B[i] & B[i] < 0xF0)
-                {
-                    temp.Add(B[i]);
-                    i = i + 1;
-                    temp.Add(B[i]);
-                }
-                else
-                {
-                    if (0x00 <= B[i] & B[i] < 0x20)
-                    {
-                        if (temp.Count != 0)
-                        {
-                            returned.Add(new MyByteArray { Type = type, Bytes = temp.ToArray() });
-                            type = "Text";
-                            temp.Clear();
-                        }
-
-                        type = "System";
-                        temp.Add(B[i]);
-
-                        returned.Add(new MyByteArray { Type = type, Bytes = temp.ToArray() });
-                        type = "Text";
-                        temp.Clear();
-                    }
-                    else
-                    {
-                        if (temp.Count != 0)
-                        {
-                            returned.Add(new MyByteArray { Type = type, Bytes = temp.ToArray() });
-                            type = "Text";
-                            temp.Clear();
-                        }
-
-
-                        type = "System";
-                        temp.Add(B[i]);
-                        int count = (B[i] - 0xF0) * 2 - 1;
-                        for (int k = 0; k < count; k++)
-                        {
-                            i++;
-                            temp.Add(B[i]);
-                        }
-
-                        returned.Add(new MyByteArray { Type = type, Bytes = temp.ToArray() });
-                        type = "Text";
-                        temp.Clear();
-                    }
-                }
-            }
-
-            return returned;
-        }
-
         #endregion ParseMSG1
-
-        public void UpdateString()
-        {
-            foreach (var NAME in name)
-            {
-                NAME.Old_Name = BytesToString(NAME.Old_Name_Bytes);
-            }
-        }
 
         private string BytesToString(byte[] bytes)
         {
@@ -547,21 +506,22 @@ namespace PersonaText
             {
                 if (0x20 <= bytes[i] & bytes[i] < 0x80)
                 {
-                    if (Static.FontMap.old_char.Exists(x => x.Index == bytes[i]))
+                    FnMpData fnmp = Static.FontMap.old_char.List.FirstOrDefault(x => x.Index == bytes[i]);
+
+                    if (fnmp == null)
                     {
-                        fnmp fnmp = Static.FontMap.old_char.Find(x => x.Index == bytes[i]);
+                        returned = returned + "<NCHAR>";
+                    }
+                    else
+                    {
                         if (fnmp.Char != "")
                         {
                             returned = returned + fnmp.Char;
                         }
                         else
                         {
-                            returned = returned + "{C}";
+                            returned = returned + "<CHAR>";
                         }
-                    }
-                    else
-                    {
-                        returned = returned + "{NC}";
                     }
                 }
                 else if (0x80 <= bytes[i] & bytes[i] < 0xF0)
@@ -569,22 +529,23 @@ namespace PersonaText
                     int link = (bytes[i] - 0x81) * 0x80 + bytes[i + 1] + 0x20;
 
                     i++;
-                    if (Static.FontMap.old_char.Exists(x => x.Index == link))
-                    {
-                        fnmp fnmp = Static.FontMap.old_char.Find(x => x.Index == link);
 
+                    FnMpData fnmp = Static.FontMap.old_char.List.FirstOrDefault(x => x.Index == link);
+
+                    if (fnmp == null)
+                    {
+                        returned = returned + "<NCHAR>";
+                    }
+                    else
+                    {
                         if (fnmp.Char != "")
                         {
                             returned = returned + fnmp.Char;
                         }
                         else
                         {
-                            returned = returned + "{!}";
+                            returned = returned + "<CHAR>";
                         }
-                    }
-                    else
-                    {
-                        returned = returned + "{!}";
                     }
                 }
                 else
@@ -622,7 +583,7 @@ namespace PersonaText
             using (StreamWriter SW = new StreamWriter(FS))
                 foreach (var NAME in name)
                 {
-                    SW.WriteLine("Name № " + NAME.Index + ":\t" + NAME.Old_Name);
+                    SW.WriteLine("Name № " + NAME.Index + ":\t" + NAME.OldName);
                 }
 
 
@@ -643,7 +604,7 @@ namespace PersonaText
                         if (Name.Exists(x => x.Index == MSG.Character_Index))
                         {
                             name Name_i = Name.Find(x => x.Index == MSG.Character_Index);
-                            SW.Write(Name_i.Old_Name);
+                            SW.Write(Name_i.OldName);
                         }
                         else if (MSG.Type == "SEL")
                         {
@@ -675,7 +636,7 @@ namespace PersonaText
             {
                 foreach (var NAME in name)
                 {
-                    SW.WriteLine("Name № " + NAME.Index + ":\t" + NAME.Old_Name);
+                    SW.WriteLine("Name № " + NAME.Index + ":\t" + NAME.OldName);
                 }
                 SW.WriteLine();
 
@@ -689,7 +650,7 @@ namespace PersonaText
                         if (Name.Exists(x => x.Index == MSG.Character_Index))
                         {
                             name Name_i = Name.Find(x => x.Index == MSG.Character_Index);
-                            SW.Write(Name_i.Old_Name);
+                            SW.Write(Name_i.OldName);
                         }
                         else if (MSG.Type == "SEL")
                         {
@@ -711,18 +672,19 @@ namespace PersonaText
             }
         }
 
-        public void SaveAsMSG1(string FileName, string Add, Stream MS)
+        private void SaveAsMSG1(string FileName, Stream MS)
+        {
+            SaveAsMSG1(FileName, "", MS);
+        }
+
+        private void SaveAsMSG1(string FileName, string Add, Stream MS)
         {
             FileInfo FI = new FileInfo(FileName);
             if (FI.Extension != ".MSG1")
-            {
-                MS.Position = 0;
-                using (FileStream FS = new FileStream(FileName + Add + ".MSG1", FileMode.Create))
-                    MS.CopyTo(FS);
-            }
+                MS.SaveToFile(FileName + Add + ".MSG1");
         }
 
-        private MemoryStream _GetNewMSG1()
+        public MemoryStream GetNewMSG1()
         {
             byte[] buffer;
 
@@ -785,15 +747,15 @@ namespace PersonaText
                         MS.WriteInt(0x0);
                         foreach (var Str in String.Prefix_bytes)
                         {
-                            Size = Size + Str.Bytes.Length;
+                            Size += Str.Bytes.Length;
                         }
                         foreach (var Str in String.New_string_bytes)
                         {
-                            Size = Size + Str.Bytes.Length;
+                            Size += Str.Bytes.Length;
                         }
                         foreach (var Str in String.Postfix_bytes)
                         {
-                            Size = Size + Str.Bytes.Length;
+                            Size += Str.Bytes.Length;
                         }
                     }
                     MSG_o.Add(Size);
@@ -865,16 +827,17 @@ namespace PersonaText
                     MS.WriteInt(0);
                 }
 
-                //foreach (var NAME in name)
-                //{
-                //    LastBlock.Add((int)MS.Position);
-                //    MS.WriteInt(0);
-                //}
-
                 foreach (var NAME in name)
                 {
                     NAME_pos.Add((int)MS.Position);
-                    MS.Write(NAME.New_Name_Bytes, 0, NAME.New_Name_Bytes.Length);
+                    if (NAME.NewNameBytes.Length == 0)
+                    {
+                        MS.Write(NAME.OldNameBytes, 0, NAME.OldNameBytes.Length);
+                    }
+                    else
+                    {
+                        MS.Write(NAME.NewNameBytes, 0, NAME.NewNameBytes.Length);
+                    }
                     MS.WriteByte(0);
                 }
                 MS.Position = Name_Block_pos;
@@ -906,7 +869,6 @@ namespace PersonaText
 
             return new MemoryStream(buffer);
         }
-        public MemoryStream GetNewMSG1 { get { return _GetNewMSG1(); } }
 
         private byte[] getLastBlock(List<int> Addresses)
         {
@@ -942,6 +904,10 @@ namespace PersonaText
                 if (Addresses[index + 1] - Addresses[index] == 4)
                 {
                     return getSeq(ref Addresses, index + 1) + 1;
+                }
+                else
+                {
+                    return 0;
                 }
             }
             return 0;
@@ -1003,8 +969,8 @@ namespace PersonaText
                 {
                     XElement Name = new XElement("Name");
                     Name.Add(new XAttribute("Index", NAME.Index));
-                    Name.Add(new XElement("OldNameSource", BitConverter.ToString(NAME.Old_Name_Bytes)));
-                    Name.Add(new XElement("NewName", NAME.New_Name));
+                    Name.Add(new XElement("OldNameSource", BitConverter.ToString(NAME.OldNameBytes)));
+                    Name.Add(new XElement("NewName", NAME.NewName));
                     CharName.Add(Name);
                 }
 
@@ -1091,7 +1057,7 @@ namespace PersonaText
 
                     string NewName = NAME.Element("NewName").Value;
 
-                    name.Add(new name { Index = Index, Old_Name_Bytes = OldNameSource, New_Name = NewName });
+                    name.Add(new name { Index = Index, OldNameBytes = OldNameSource, NewName = NewName });
                 }
 
                 foreach (var Message in MSG1.Element("MSG").Elements())
@@ -1108,7 +1074,7 @@ namespace PersonaText
                         SourceBytes = Enumerable.Range(0, SourceBytes_str.Split('-').Length).Select(x => Convert.ToByte(SourceBytes_str.Split('-')[x], 16)).ToArray();
                     }
 
-                    ObservableCollection<MyString> MSGStrings = new ObservableCollection<PersonaText.MyString>();
+                    BindingList<MyString> MSGStrings = new BindingList<MyString>();
                     foreach (var Strings in Message.Element("MessageStrings").Elements())
                     {
                         MyString String = new MyString();
@@ -1118,7 +1084,7 @@ namespace PersonaText
                         foreach (var PrefixByte in Strings.Elements("PrefixBytes"))
                         {
                             int PrefixIndex = Convert.ToInt32(PrefixByte.Attribute("Index").Value);
-                            string PrefixType = PrefixByte.Attribute("Type").Value;
+                            arrayType PrefixType = Util.GetType(PrefixByte.Attribute("Type").Value);
 
                             byte[] PrefixBytes = new byte[0];
                             string PrefixBytes_str = PrefixByte.Value;
@@ -1133,7 +1099,7 @@ namespace PersonaText
                         foreach (var Old in Strings.Elements("OldStringBytes"))
                         {
                             int OldIndex = Convert.ToInt32(Old.Attribute("Index").Value);
-                            string OldType = Old.Attribute("Type").Value;
+                            arrayType OldType = Util.GetType(Old.Attribute("Type").Value);
 
                             byte[] OldBytes = new byte[0];
                             string OldBytes_str = Old.Value;
@@ -1150,7 +1116,7 @@ namespace PersonaText
                         foreach (var PostfixByte in Strings.Elements("PostfixBytes"))
                         {
                             int PostfixIndex = Convert.ToInt32(PostfixByte.Attribute("Index").Value);
-                            string PostfixType = PostfixByte.Attribute("Type").Value;
+                            arrayType PostfixType = Util.GetType(PostfixByte.Attribute("Type").Value);
 
                             byte[] PostfixBytes = new byte[0];
                             string PostfixBytes_str = PostfixByte.Value;
@@ -1164,7 +1130,7 @@ namespace PersonaText
 
                         MSGStrings.Add(String);
                     }
-                    msg.Add(new PersonaText.msg { Index = Index, Type = Type, Name = Name, Character_Index = CharacterNameIndex, SourceBytes = SourceBytes, Strings = MSGStrings });
+                    msg.Add(new msg { Index = Index, Type = Type, Name = Name, Character_Index = CharacterNameIndex, SourceBytes = SourceBytes, Strings = MSGStrings });
                 }
 
             }
@@ -1334,7 +1300,7 @@ namespace PersonaText
                 return returned;
             }
 
-            public void SaveNewPM1(string FileName)
+            public void SaveNew(string FileName)
             {
                 using (FileStream FS = new FileStream(FileName, FileMode.Create, FileAccess.ReadWrite))
                 {
@@ -1517,24 +1483,33 @@ namespace PersonaText
                     }
                 }
 
-                public List<Element> FLW1Table { get; private set; } = new List<Element>();
+                public List<Element> FLW0Table { get; private set; } = new List<Element>();
 
                 public Table(int[][] array)
                 {
-                    for (int i = 0; i < array.Length; i++)
-                        FLW1Table.Add(new Element(array[i][0], array[i][1], array[i][2], array[i][3]));
+                    for (int i = 0; i < 3; i++)
+                        FLW0Table.Add(new Element(array[i][0], array[i][1], array[i][2], array[i][3]));
+                    for (int i = 3; i < array.Length; i++)
+                        FLW0Table.Add(new Element(array[i][0], array[i][2], array[i][1], array[i][3]));
                 }
 
                 public MemoryStream GetMS()
                 {
                     MemoryStream returned = new MemoryStream();
 
-                    foreach (var line in FLW1Table)
+                    for (int i = 0; i < 3; i++)
                     {
-                        returned.WriteInt(line.Index);
-                        returned.WriteInt(line.Size);
-                        returned.WriteInt(line.Count);
-                        returned.WriteInt(line.Position);
+                        returned.WriteInt(FLW0Table[i].Index);
+                        returned.WriteInt(FLW0Table[i].Size);
+                        returned.WriteInt(FLW0Table[i].Count);
+                        returned.WriteInt(FLW0Table[i].Position);
+                    }
+                    for (int i = 3; i < FLW0Table.Count; i++)
+                    {
+                        returned.WriteInt(FLW0Table[i].Index);
+                        returned.WriteInt(FLW0Table[i].Size);
+                        returned.WriteInt(FLW0Table[i].Count);
+                        returned.WriteInt(FLW0Table[i].Position);
                     }
 
                     returned.Position = 0;
@@ -1543,12 +1518,141 @@ namespace PersonaText
 
                 public void Shift(int shift)
                 {
-                    FLW1Table.FindAll(x => x.Index > 0x6).ForEach(a => a.Position += shift);
+                    FLW0Table.FindAll(x => x.Index > 0x3).ForEach(a => a.Position += shift);
                 }
             }
 
             Header _Header;
             Table _Table;
+
+            class elementFLW0
+            {
+                public string Name { get; set; }
+                public List<MemoryStream> StreamList { get; set; }
+            }
+
+            List<elementFLW0> FLW0List = new List<elementFLW0>();
+
+            class MapElement
+            {
+                public string Name { get; set; }
+                public int Index { get; set; }
+
+            }
+            static List<MapElement> Map = new List<MapElement>()
+            {
+                new MapElement { Index = 0x0, Name = "0" },
+                new MapElement { Index = 0x1, Name = "1" },
+                new MapElement { Index = 0x2, Name = "2" },
+                new MapElement { Index = 0x3, Name = "MSG" },
+                new MapElement { Index = 0x4, Name = "4" },
+            };
+
+            public FLW0(string SourceFile)
+            {
+                FileStream FileStream = new FileStream(SourceFile, FileMode.Open, FileAccess.Read);
+                _Header = new Header(new MemoryStream(FileStream.ReadByteArray(0x20)));
+                _Table = new Table(FileStream.ReadIntArrayArray(_Header.TableLineCount, 4));
+
+                foreach (var element in _Table.FLW0Table)
+                {
+                    if (element.Size * element.Count > 0)
+                    {
+                        MapElement tempmap = Map.Find(x => x.Index == element.Index);
+                        if (tempmap != null)
+                        {
+                            elementFLW0 temp = new elementFLW0();
+                            temp.Name = tempmap.Name;
+                            temp.StreamList = GetListMS(FileStream, element);
+                            FLW0List.Add(temp);
+                        }
+                        else
+                        {
+                            MessageBox.Show("FLW0: unknown element");
+                            return;
+                        }
+                    }
+                }
+            }
+
+            public void SaveNew(string FileName)
+            {
+                using (FileStream FS = new FileStream(FileName, FileMode.Create, FileAccess.ReadWrite))
+                {
+                    _Header.GetMS().CopyTo(FS);
+                    _Table.GetMS().CopyTo(FS);
+                    foreach (var a in FLW0List)
+                    {
+                        foreach (var b in a.StreamList)
+                        {
+                            b.Position = 0;
+                            b.CopyTo(FS);
+                        }
+                    }
+                }
+            }
+
+            private List<MemoryStream> GetListMS(FileStream FS, Table.Element line)
+            {
+                List<MemoryStream> returned = new List<MemoryStream>();
+                FS.Position = line.Position;
+
+                for (int i = 0; i < line.Count; i++)
+                {
+                    returned.Add(new MemoryStream(FS.ReadByteArray(line.Size)));
+                }
+
+                return returned;
+            }
+
+            public void SetNewMSG1(MemoryStream NewMSG)
+            {
+                int SizeShift = ChangeMSG(NewMSG);
+                _Table.Shift(SizeShift);
+                _Header.Shift(SizeShift);
+            }
+
+            private int ChangeMSG(MemoryStream NewMSG)
+            {
+                elementFLW0 temp = FLW0List.Find(x => x.Name == "MSG");
+                if (temp != null)
+                {
+                    if (temp.StreamList.Count == 1)
+                    {
+
+                        MemoryStream newMSG = new MemoryStream();
+
+                        NewMSG.CopyTo(newMSG);
+                        while (newMSG.Length % 16 != 0)
+                        {
+                            newMSG.WriteByte(0);
+                        }
+
+                        int SizeShift = Convert.ToInt32(newMSG.Length - temp.StreamList.First().Length);
+                        temp.StreamList.Clear();
+                        temp.StreamList.Add(newMSG);
+
+                        _Table.FLW0Table.Find(x => x.Index == 0x3).Size = (int)newMSG.Length;
+
+                        return SizeShift;
+                    }
+                    else if (temp.StreamList.Count > 1)
+                    {
+                        MessageBox.Show("Exception: 2 or more MSG");
+                        return -1;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Exception: 0 MSG");
+                        return -1;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("File does not contain MSG");
+                    return -1;
+                }
+            }
 
         }
     }

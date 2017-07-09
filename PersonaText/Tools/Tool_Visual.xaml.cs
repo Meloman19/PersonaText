@@ -13,12 +13,62 @@ using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.ComponentModel;
+using System.IO;
 
 namespace PersonaText
 {
     public partial class ToolVisual : Window
     {
-        private List<fnmp> CharList = new List<fnmp>();
+        #region Visual
+        Visual VisualText = new Visual();
+        Visual VisualName = new Visual();
+
+        private void BackImageVisual_GlyphScaleChanged(double glyphScale)
+        {
+            VisualName.Back_GlyphScaleChanged(glyphScale);
+            VisualText.Back_GlyphScaleChanged(glyphScale);
+        }
+
+        private void BackImageVisual_PixelWidthChanged(int pixelWidth)
+        {
+            VisualName.Back_PixelWidthChanged(pixelWidth);
+            VisualText.Back_PixelWidthChanged(pixelWidth);
+        }
+
+        private void VisualWidth_ValueChanged(double width)
+        {
+            VisualName.Width_ValueChanged(width);
+            VisualText.Width_ValueChanged(width);
+        }
+
+        private void Name_ColorChanged(Color color)
+        {
+            VisualName.Text = VisualName.Text?.ChangePallete(color);
+        }
+
+        private void Text_ColorChanged(Color color)
+        {
+            VisualText.Text = VisualText.Text?.ChangePallete(color);
+        }
+
+        private void BackgroundImageChanged_Changed()
+        {
+            Resources["TextXStart"] = Static.BackImageVisual.textStartX;
+            Resources["TextYStart"] = Static.BackImageVisual.textStartY;
+            Resources["NameXStart"] = Static.BackImageVisual.nameStartX;
+            Resources["NameYStart"] = Static.BackImageVisual.nameStartY;
+            Resources["Back"] = Static.BackImageVisual.Image;
+        }
+
+        #endregion Visual
+
+        BindingList<string> Backgrounds = new BindingList<string>();
+        ObservableVariable OV = new ObservableVariable();
+
+        List<MyByteArray> TEXT = new List<MyByteArray>();
+        List<MyByteArray> NAME = new List<MyByteArray>();
+
+        private CharList CharList = null;
 
         private string[] OldText = new string[1];
 
@@ -28,52 +78,67 @@ namespace PersonaText
             public string Name { get; set; }
         }
 
-        private ObservableCollection<BitmapList> VisualText = new ObservableCollection<BitmapList>();
-        private ObservableCollection<BitmapList> VisualName = new ObservableCollection<BitmapList>();
-
         public ObservableCollection<ComboBoxList> PageList = new ObservableCollection<ComboBoxList>();
         public ObservableCollection<ComboBoxList> FontList = new ObservableCollection<ComboBoxList>();
 
         public ToolVisual()
         {
+            Static.VisualWidth.ValueChanged += VisualWidth_ValueChanged;
+            VisualWidth_ValueChanged(Static.VisualWidth.Value);
+            Static.BackImageVisual.PixelWidthChanged += BackImageVisual_PixelWidthChanged;
+            BackImageVisual_PixelWidthChanged(Static.BackImageVisual.Image.PixelWidth);
+            Static.BackImageVisual.GlyphScaleChanged += BackImageVisual_GlyphScaleChanged;
+            BackImageVisual_GlyphScaleChanged(Static.BackImageVisual.glyphScale);
+            Static.Setting.Empty.Text.ColorChanged += Text_ColorChanged;
+            Text_ColorChanged(Static.Setting.Empty.Text.Color);
+            Static.Setting.Empty.Name.ColorChanged += Name_ColorChanged;
+            Name_ColorChanged(Static.Setting.Empty.Name.Color);
+
+            Static.BackImageVisual.BackgroundImageChanged += BackgroundImageChanged_Changed; ;
             InitializeComponent();
+
+            SelectBack.DataContext = Backgrounds;
+            Backgrounds.Add("Empty");
+
+            if (Directory.Exists((Static.BackgroundPath)))
+            {
+                DirectoryInfo DI = new DirectoryInfo(Static.BackgroundPath);
+                foreach (var file in DI.GetFiles(@"*.png"))
+                    Backgrounds.Add(file.Name);
+            }
+
+            SelectBack.SelectedIndex = Backgrounds.IndexOf(Static.Setting.SelectedBackgroundVisual);
 
             PageList.Add(new ComboBoxList() { Text = "Persona 4 Dialog", Name = "Persona4Dialog" });
             FontList.Add(new ComboBoxList() { Text = "Old Font", Name = "OldFont" });
             FontList.Add(new ComboBoxList() { Text = "New Font", Name = "NewFont" });
-            ComboBox.DataContext = PageList;
             ComboBox_Font.DataContext = FontList;
-            VisualT.DataContext = VisualText;
-            VisualT1.DataContext = VisualName;
+            SelectBack.DataContext = Backgrounds;
+
+            VisText.DataContext = VisualText;
+            VisName.DataContext = VisualName;
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextBox TB = sender as TextBox;
-            List<MyByteArray> temp = TB.Text.GetMyByteArray(CharList);
+            TEXT.GetMyByteArray(TB.Text, CharList.List);
 
             string text = "";
-            foreach (var a in temp)
+            foreach (var a in TEXT)
                 if (a.Bytes.Length != 0)
                     text += BitConverter.ToString(a.Bytes).Replace('-', ' ') + " ";
 
             HEX.Text = text;
 
-            VisualText.GetBitmapList(temp, CharList, System.Drawing.Color.White);
+            VisualText.Text = TEXT.DrawText(CharList, Static.BackImageVisual.ColorText);
         }
 
         private void TextBox_NameChanged(object sender, TextChangedEventArgs e)
         {
             TextBox TB = sender as TextBox;
-            List<MyByteArray> temp = TB.Text.GetMyByteArray(CharList);
-            VisualName.GetBitmapList(temp, CharList, System.Drawing.Color.Black);
-        }
-
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ComboBoxList CBL = (ComboBoxList)e.AddedItems[0];
-            Grid Frame = (Grid)FindName(CBL.Name);
-            Frame.Visibility = Visibility.Visible;
+            NAME.GetMyByteArray(TB.Text, CharList.List);
+            VisualName.Text = NAME.DrawText(CharList, Static.BackImageVisual.ColorName);
         }
 
         private void ComboBox_Font_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -87,6 +152,43 @@ namespace PersonaText
             {
                 CharList = Static.FontMap.new_char;
             }
+
+            TextBox_TextChanged(TextBoxText, null);
+            TextBox_NameChanged(TextBoxName, null);
+        }
+
+        class ObservableVariable : INotifyPropertyChanged
+        {
+            #region INotifyPropertyChanged implementation
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            protected void Notify(string propertyName)
+            {
+                if (this.PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+                }
+            }
+            #endregion INotifyPropertyChanged implementation
+
+            public double Width { get; set; }
+        }
+
+        private void Bitmap_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            Static.VisualWidth.Value = e.NewSize.Width;
+        }
+
+        private void SelectBack_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Static.Setting.SelectedBackgroundVisual = (sender as ComboBox).SelectedItem as string;
+            if (Static.Setting.SelectedBackgroundVisual == "Empty")
+            { Static.BackImageVisual.Update("Empty"); }
+            else
+            { Static.BackImageVisual.Update(Static.BackgroundPath + Static.Setting.SelectedBackgroundVisual); }
+
+            TextBox_TextChanged(TextBoxText, null);
+            TextBox_NameChanged(TextBoxName, null);
         }
     }
 }

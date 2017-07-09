@@ -4,15 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PersonaText"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Tool_Visual" Height="434.765" Width="904.534">
+        Title="Tool_Visual" Height="434.765" Width="904.534"  >
 
     <Window.Resources>
-        <local:ConverterHeigth x:Key="ConverterHeight"/>
-        <local:ConverterWidth x:Key="ConverterWidth"/>
-        <local:ConverterXpos x:Key="ConverterX"/>
-        <local:ConverterYpos x:Key="ConverterY"/>
-        <BitmapImage x:Key="Persona4DialogBack" UriSource="../Resources/Persona4Dialog.png"/>
+        <GridLength x:Key="TextXStart">0*</GridLength>
+        <GridLength x:Key="TextYStart">0*</GridLength>
+        <GridLength x:Key="NameXStart">0*</GridLength>
+        <GridLength x:Key="NameYStart">0*</GridLength>
+        <BitmapImage x:Key="Back" UriSource="/Resources/settings-work-tool.png"/>
     </Window.Resources>
 
     <Grid>
@@ -33,12 +34,10 @@
             </Grid.ColumnDefinitions>
 
             <ComboBox Background="#FFF0F0F0" Grid.Column="1" Name="ComboBox_Font" SelectionChanged="ComboBox_Font_SelectionChanged" ItemsSource="{Binding}" DisplayMemberPath="Text" SelectedIndex="0" />
-
-
-            <ComboBox Visibility="Hidden" Grid.Column="2" Name="ComboBox" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding}" DisplayMemberPath="Text" SelectedIndex="0" />
+            <ComboBox Name="SelectBack" ItemsSource="{Binding}" SelectionChanged="SelectBack_SelectionChanged" ></ComboBox>
         </Grid>
 
-        <Grid Name="Persona4Dialog" Grid.Row="1">
+        <Grid Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
@@ -46,95 +45,34 @@
                 <RowDefinition Height="Auto"></RowDefinition>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
-                <Image Name="Bitmap" Source="{StaticResource Persona4DialogBack}" Stretch="Uniform"></Image>
-                <Grid Height="{Binding ActualHeight, ElementName=Bitmap}" Width="{Binding ActualWidth, ElementName=Bitmap}">
+            <Grid Grid.Row="0" Grid.Column="0" Margin="5">
+                <Image Name="Back" Source="{DynamicResource Back}" Stretch="Uniform" SizeChanged="Bitmap_SizeChanged"/>
+                <Grid Height="{Binding ElementName=Back, Path=ActualHeight}" Width="{Binding ElementName=Back, Path=ActualWidth}">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.0609*"></ColumnDefinition>
-                        <ColumnDefinition Width="0.0266*"></ColumnDefinition>
-                        <ColumnDefinition Width="0.9125*"></ColumnDefinition>
+                        <ColumnDefinition Width="{DynamicResource TextXStart}"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="0.1454*"></RowDefinition>
-                        <RowDefinition Height="0.19268*"></RowDefinition>
-                        <RowDefinition Height="0.5296*"></RowDefinition>
-                        <RowDefinition Height="0.1324*"></RowDefinition>
+                        <RowDefinition Height="{DynamicResource TextYStart}"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
                     </Grid.RowDefinitions>
-
-                    <ItemsControl Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Name="VisualT1" ItemsSource="{Binding}">
-                        <ItemsControl.ItemContainerStyle>
-                            <Style>
-                                <Setter Property="Canvas.Left">
-                                    <Setter.Value>
-                                        <MultiBinding Converter="{StaticResource ConverterX}" ConverterParameter="Name">
-                                            <Binding Path="posX"></Binding>
-                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
-                                        </MultiBinding>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Canvas.Top">
-                                    <Setter.Value>
-                                        <MultiBinding Converter="{StaticResource ConverterY}" ConverterParameter="Name">
-                                            <Binding Path="posY"></Binding>
-                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
-                                        </MultiBinding>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Image Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}},NotifyOnSourceUpdated=True}" 
-                                           Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource ConverterWidth},NotifyOnSourceUpdated=True}"
-                                           Source="{Binding Bitmap}" Stretch="Fill"></Image>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <ItemsControl Grid.Column="2" Grid.Row="2" Name="VisualT" ItemsSource="{Binding}">
-                        <ItemsControl.ItemContainerStyle>
-                            <Style>
-                                <Setter Property="Canvas.Left">
-                                    <Setter.Value>
-                                        <MultiBinding Converter="{StaticResource ConverterX}"  ConverterParameter="Text">
-                                            <Binding Path="posX"></Binding>
-                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
-                                        </MultiBinding>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Canvas.Top">
-                                    <Setter.Value>
-                                        <MultiBinding Converter="{StaticResource ConverterY}" ConverterParameter="Text">
-                                            <Binding Path="posY"></Binding>
-                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualHeight"></Binding>
-                                        </MultiBinding>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Image Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}, Converter={StaticResource ConverterHeight},NotifyOnSourceUpdated=True}" 
-                                           Width="{Binding Height, RelativeSource={RelativeSource Self}, Converter={StaticResource ConverterWidth},NotifyOnSourceUpdated=True}"
-                                           Source="{Binding Bitmap}" Stretch="Fill" OpacityMask="{x:Null}" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <Image Name="VisText" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Source="{Binding Text}" Width="{Binding Width}" Height="{Binding Height}"/>
+                </Grid >
+                <Grid Height="{Binding ElementName=Back, Path=ActualHeight}" Width="{Binding ElementName=Back, Path=ActualWidth}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource NameXStart}"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="{DynamicResource NameYStart}"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Image Name="VisName" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Source="{Binding Text}" Width="{Binding Width}" Height="{Binding Height}"/>
                 </Grid>
             </Grid>
 
-            <TextBox Grid.Row="1" Width="200" HorizontalAlignment="Left" MaxLines="1" Margin="4" TextChanged="TextBox_NameChanged" />
-            <TextBox Grid.Row="2" Margin="15,4,4,4" TextChanged="TextBox_TextChanged" AcceptsReturn="True" />
+            <TextBox Grid.Row="1" Name="TextBoxName" Width="200" HorizontalAlignment="Left" MaxLines="1" Margin="4" TextChanged="TextBox_NameChanged" />
+            <TextBox Grid.Row="2" Name="TextBoxText" Margin="15,4,4,4" TextChanged="TextBox_TextChanged" AcceptsReturn="True" />
             <TextBox Grid.Row="3" Margin="15,4,4,4" IsReadOnly="True" Name="HEX" TextWrapping="Wrap"/>
         </Grid>
     </Grid>
