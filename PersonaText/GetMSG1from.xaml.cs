@@ -43,7 +43,7 @@ namespace PersonaText
 
                 if (OVP.MSG1Position.Count == 1)
                 {
-                    MS = OVP.MSG1.GetMSG1fromFile(OVP.FileName, OVP.MSG1Position[0]);
+                    MS = Util.MSG1.GetMSG1fromFile(OVP.FileName, OVP.MSG1Position[0]);
                     this.Close();
                 }
                 else if (OVP.MSG1Position.Count > 1)
@@ -85,7 +85,7 @@ namespace PersonaText
         {
             ListBox temp = (ListBox)sender;
             long Position = (long)temp.SelectedItem;
-            MS = OVP.MSG1.GetMSG1fromFile(OVP.FileName, Position);
+            MS = Util.MSG1.GetMSG1fromFile(OVP.FileName, Position);
             Static.FileInfo.SelectPosition = Position;
             this.Close();
         }

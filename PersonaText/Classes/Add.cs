@@ -13,6 +13,95 @@ namespace PersonaText
 {
     static class Util
     {
+        public static class MSG1
+        {
+            public static MemoryStream GetMSG1fromPMD1(string FileName)
+            {
+                MemoryStream returned = new MemoryStream();
+
+                try
+                {
+                    FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+                    fs.Position = 0x20;
+                    while (fs.ReadInt() != 6)
+                    {
+                        fs.Position = fs.Position + 12;
+                    }
+                    int MSG1_Size = fs.ReadInt();
+                    fs.Position = fs.Position + 4;
+                    int MSG1_Position = fs.ReadInt();
+
+                    byte[] buffer = new byte[MSG1_Size];
+                    fs.Position = MSG1_Position;
+                    fs.Read(buffer, 0, MSG1_Size);
+                    returned.Write(buffer, 0, MSG1_Size);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Get MSG1 from PM1 error!");
+                    MessageBox.Show(e.ToString());
+                    returned = new MemoryStream();
+                }
+
+                return returned;
+            }
+
+            public static MemoryStream GetMSG1fromFLW0(string FileName)
+            {
+                MemoryStream returned = new MemoryStream();
+
+                try
+                {
+                    FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+                    fs.Position = 0x20;
+                    while (fs.ReadInt() != 3)
+                    {
+                        fs.Position = fs.Position + 12;
+                    }
+                    fs.Position = fs.Position + 4;
+                    int MSG1_Size = fs.ReadInt();
+                    int MSG1_Position = fs.ReadInt();
+
+                    byte[] buffer = new byte[MSG1_Size];
+                    fs.Position = MSG1_Position;
+                    fs.Read(buffer, 0, MSG1_Size);
+                    returned.Write(buffer, 0, MSG1_Size);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Get MSG1 from BF error!");
+                    MessageBox.Show(e.ToString());
+                    returned = new MemoryStream();
+                }
+
+                return returned;
+            }
+
+            public static MemoryStream GetMSG1fromFile(string FileName, long Position)
+            {
+                MemoryStream returned = new MemoryStream();
+                try
+                {
+                    FileStream FS = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+
+                    FS.Position = Position + 4;
+                    int Size = FS.ReadInt();
+                    FS.Position = Position;
+                    byte[] buffer = new byte[Size];
+                    FS.Read(buffer, 0, Size);
+                    returned.Write(buffer, 0, Size);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Get MSG1 from file error!");
+                    MessageBox.Show(e.ToString());
+                    returned = new MemoryStream();
+                }
+                return returned;
+            }
+
+        }
+
         public static BitmapPalette CreatePallete(Color color)
         {
             List<Color> ColorBMP = new List<Color>();
@@ -147,7 +236,6 @@ namespace PersonaText
                 }
                 MS_MSG1.Position = 0;
                 ParseMSG1(MS_MSG1);
-                //UpdateString();
             }
         }
 
@@ -164,7 +252,6 @@ namespace PersonaText
                         MS.Position = 0;
 
                         ParseMSG1(MS);
-                        // UpdateString();
                         SaveAsText(FileName, Convert.ToString(LMS.IndexOf(MS)).PadLeft(3, '0'), SaveAsTextOption);
                     }
                 }
@@ -179,7 +266,6 @@ namespace PersonaText
                     MS.Position = 0;
 
                     ParseMSG1(MS);
-                    //UpdateString();
                     SaveAsText(FileName, "000", SaveAsTextOption);
                 }
             }
@@ -199,15 +285,15 @@ namespace PersonaText
 
             if (FileType == "PMD1")
             {
-                return GetMSG1fromPMD1(FileName);
+                return Util.MSG1.GetMSG1fromPMD1(FileName);
             }
             else if (FileType == "FLW0")
             {
-                return GetMSG1fromFLW0(FileName);
+                return Util.MSG1.GetMSG1fromFLW0(FileName);
             }
             else if (FileType == "MSG1")
             {
-                return GetMSG1fromFile(FileName, 0);
+                return Util.MSG1.GetMSG1fromFile(FileName, 0);
             }
             else
             {
@@ -215,89 +301,6 @@ namespace PersonaText
                 GMF.ShowDialog();
                 return GMF.MS;
             }
-        }
-
-        public MemoryStream GetMSG1fromPMD1(string FileName)
-        {
-            MemoryStream returned = new MemoryStream();
-
-            try
-            {
-                FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
-                fs.Position = 0x20;
-                while (fs.ReadInt() != 6)
-                {
-                    fs.Position = fs.Position + 12;
-                }
-                int MSG1_Size = fs.ReadInt();
-                fs.Position = fs.Position + 4;
-                int MSG1_Position = fs.ReadInt();
-
-                byte[] buffer = new byte[MSG1_Size];
-                fs.Position = MSG1_Position;
-                fs.Read(buffer, 0, MSG1_Size);
-                returned.Write(buffer, 0, MSG1_Size);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Get MSG1 error!");
-                MessageBox.Show(e.ToString());
-                returned = new MemoryStream();
-            }
-
-            return returned;
-        }
-
-        public MemoryStream GetMSG1fromFLW0(string FileName)
-        {
-            MemoryStream returned = new MemoryStream();
-
-            try
-            {
-                FileStream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read);
-                fs.Position = 0x20;
-                while (fs.ReadInt() != 3)
-                {
-                    fs.Position = fs.Position + 12;
-                }
-                fs.Position = fs.Position + 4;
-                int MSG1_Size = fs.ReadInt();
-                int MSG1_Position = fs.ReadInt();
-
-                byte[] buffer = new byte[MSG1_Size];
-                fs.Position = MSG1_Position;
-                fs.Read(buffer, 0, MSG1_Size);
-                returned.Write(buffer, 0, MSG1_Size);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                returned = new MemoryStream();
-            }
-
-            return returned;
-        }
-
-        public MemoryStream GetMSG1fromFile(string FileName, long Position)
-        {
-            MemoryStream returned = new MemoryStream();
-            try
-            {
-                FileStream FS = new FileStream(FileName, FileMode.Open, FileAccess.Read);
-
-                FS.Position = Position + 4;
-                int Size = FS.ReadInt();
-                FS.Position = Position;
-                byte[] buffer = new byte[Size];
-                FS.Read(buffer, 0, Size);
-                returned.Write(buffer, 0, Size);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                returned = new MemoryStream();
-            }
-            return returned;
         }
 
         void ParseMSG1(MemoryStream ms)
@@ -573,7 +576,7 @@ namespace PersonaText
             }
         }
 
-        public void SaveAsTextOp1(string FileName, string Index)
+        void SaveAsTextOp1(string FileName, string Index)
         {
             Directory.CreateDirectory("Export Text");
 
@@ -626,7 +629,7 @@ namespace PersonaText
             }
         }
 
-        public void SaveAsTextOp2(string FileName, string Index)
+        void SaveAsTextOp2(string FileName, string Index)
         {
 
             string newFileName = Index == "" ? Path.GetDirectoryName(FileName) + "\\" + Path.GetFileNameWithoutExtension(FileName) + ".TXT"
@@ -672,12 +675,12 @@ namespace PersonaText
             }
         }
 
-        private void SaveAsMSG1(string FileName, Stream MS)
+        void SaveAsMSG1(string FileName, Stream MS)
         {
             SaveAsMSG1(FileName, "", MS);
         }
 
-        private void SaveAsMSG1(string FileName, string Add, Stream MS)
+        void SaveAsMSG1(string FileName, string Add, Stream MS)
         {
             FileInfo FI = new FileInfo(FileName);
             if (FI.Extension != ".MSG1")
@@ -870,7 +873,7 @@ namespace PersonaText
             return new MemoryStream(buffer);
         }
 
-        private byte[] getLastBlock(List<int> Addresses)
+        byte[] getLastBlock(List<int> Addresses)
         {
             int sum = 0;
             List<byte> returned = new List<byte>();
@@ -897,7 +900,7 @@ namespace PersonaText
             return returned.ToArray();
         }
 
-        private int getSeq(ref List<int> Addresses, int index)
+        int getSeq(ref List<int> Addresses, int index)
         {
             if (index < Addresses.Count - 1)
             {
@@ -913,7 +916,7 @@ namespace PersonaText
             return 0;
         }
 
-        private void Encode(int reloc, ref List<byte> LastBlock, ref int sum)
+        void Encode(int reloc, ref List<byte> LastBlock, ref int sum)
         {
             if (reloc % 2 == 0)
             {

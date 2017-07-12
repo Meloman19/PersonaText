@@ -46,11 +46,23 @@ namespace PersonaText
 
     class CharList
     {
+        public CharList(string Path, string Name)
+        {
+            List.ReadFNMP(Path + Name + ".TXT");
+            this.ReadFONT(Path + Name + ".FNT");
+            
+        }
+
         public event ValueChangedEventHandler CharListChanged;
 
         public void Update()
         {
             CharListChanged?.Invoke();
+        }
+
+        public bool Save(string filename)
+        {
+            return List.WriteFNMP(filename);
         }
 
         public List<FnMpData> List { get; set; } = new List<FnMpData>();

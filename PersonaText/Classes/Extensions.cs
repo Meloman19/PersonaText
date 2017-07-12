@@ -599,58 +599,67 @@ namespace PersonaText
 
     static class Extension
     {
-        public static void ReadFNMP(this CharList list, string filename)
+        public static void ReadFNMP(this IList<FnMpData> list, string filename)
         {
-            try
+            if (File.Exists(filename))
             {
-                StreamReader sr = new StreamReader(new FileStream(filename, FileMode.Open));
-
-                while (sr.EndOfStream == false)
+                try
                 {
-                    string str = sr.ReadLine();
+                    StreamReader sr = new StreamReader(new FileStream(filename, FileMode.Open));
 
-                    int Index = Convert.ToInt32(str.Substring(0, str.IndexOf('=')));
-                    string Char = str.Substring(str.IndexOf('=') + 1);
-                    if (Char.Length > 3)
-                        Char = Char.Substring(0, 3);
+                    while (sr.EndOfStream == false)
+                    {
+                        string str = sr.ReadLine();
 
-                    FnMpData fnmp = list.List.FirstOrDefault(x => x.Index == Index);
-                    if (fnmp == null)
-                        list.List.Add(new PersonaText.FnMpData { Index = Index, Char = Char });
-                    else
-                        fnmp.Char = Char;
+                        int Index = Convert.ToInt32(str.Substring(0, str.IndexOf('=')));
+                        string Char = str.Substring(str.IndexOf('=') + 1);
+                        if (Char.Length > 3)
+                            Char = Char.Substring(0, 3);
+
+                        FnMpData fnmp = list.FirstOrDefault(x => x.Index == Index);
+                        if (fnmp == null)
+                            list.Add(new FnMpData { Index = Index, Char = Char });
+                        else
+                            fnmp.Char = Char;
+                    }
+
+                    sr.Dispose();
                 }
-
-                sr.Dispose();
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                }
             }
         }
 
-        public static void WriteFNMP(this CharList list, string filename)
+        public static bool WriteFNMP(this IList<FnMpData> list, string filename)
         {
-            try
+            if (File.Exists(filename))
             {
-                StreamWriter sw = new StreamWriter(new FileStream(filename, FileMode.Create));
-
-                foreach (var CL in list.List)
+                try
                 {
-                    if (CL.Char != "")
-                    {
-                        string str = Convert.ToString(CL.Index) + "=" + Convert.ToString(CL.Char);
-                        sw.WriteLine(str);
-                        sw.Flush();
-                    }
-                }
+                    StreamWriter sw = new StreamWriter(new FileStream(filename, FileMode.Create));
 
-                sw.Dispose();
+                    foreach (var CL in list)
+                    {
+                        if (CL.Char != "")
+                        {
+                            string str = Convert.ToString(CL.Index) + "=" + Convert.ToString(CL.Char);
+                            sw.WriteLine(str);
+                            sw.Flush();
+                        }
+                    }
+
+                    sw.Dispose();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                    return false;
+                }
+                return true;
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
+            return false;
         }
 
         public static void ReadFONT(this CharList list, string filename)

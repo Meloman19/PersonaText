@@ -43,8 +43,8 @@ namespace PersonaText
         public static Settings Setting = new Settings(@"PersonaText.xml");
         public static class FontMap
         {
-            public static CharList old_char = new CharList();
-            public static CharList new_char = new CharList();
+            public static CharList old_char = new CharList(Static.datapath, "OLD");
+            public static CharList new_char = new CharList(Static.datapath, "NEW");
             public static List<glyphYshift> char_shift = new List<glyphYshift>();
         }
         public static BackgroundImage BackImage = new BackgroundImage();
@@ -109,23 +109,6 @@ namespace PersonaText
 
         void OpenFont()
         {
-            if (File.Exists(Static.datapath + "OLD.TXT"))
-            {
-                Static.FontMap.old_char.ReadFNMP(Static.datapath + "OLD.TXT");
-            }
-            if (File.Exists(Static.datapath + "NEW.TXT"))
-            {
-                Static.FontMap.new_char.ReadFNMP(Static.datapath + "NEW.TXT");
-            }
-            if (File.Exists(Static.datapath + "OLD.FNT"))
-            {
-                Static.FontMap.old_char.ReadFONT(Static.datapath + "OLD.FNT");
-            }
-            if (File.Exists(Static.datapath + @"NEW.FNT"))
-            {
-                Static.FontMap.new_char.ReadFONT(Static.datapath + "NEW.FNT");
-            }
-
             Static.FontMap.char_shift.ReadShift();
 
             Static.FontMap.old_char.List.Sort((a, b) => (a.Index.CompareTo(b.Index)));
@@ -246,7 +229,7 @@ namespace PersonaText
                 if (CS.ShowDialog() == true)
                 {
                     Static.FontMap.old_char.Update();
-                    Static.FontMap.old_char.WriteFNMP(@"OLD.TXT");
+                    Static.FontMap.old_char.Save(@"OLD.TXT");
                 }
             }
             catch (Exception ex)
@@ -325,7 +308,7 @@ namespace PersonaText
                 if (CS.ShowDialog() == true)
                 {
                     Static.FontMap.new_char.Update();
-                    Static.FontMap.new_char.WriteFNMP(@"NEW.TXT");
+                    Static.FontMap.old_char.Save(@"NEW.TXT");
                 }
             }
             catch (Exception ex)

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PersonaText"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        
+
         Title="Persona Text Editor" Height="440.755" Width="803.431" WindowStartupLocation="CenterScreen" Loaded="MW_Loaded" Closing="MW_Closing" AllowDrop="True" Drop="MW_Drop">
 
     <Window.Resources>

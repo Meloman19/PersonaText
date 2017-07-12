@@ -224,15 +224,15 @@ namespace PersonaText
 
                     if (FileType == "PMD1")
                     {
-                        LMS.Add(MSG1.GetMSG1fromPMD1(FileList[i]));
+                        LMS.Add(Util.MSG1.GetMSG1fromPMD1(FileList[i]));
                     }
                     else if (FileType == "FLW0")
                     {
-                        LMS.Add(MSG1.GetMSG1fromFLW0(FileList[i]));
+                        LMS.Add(Util.MSG1.GetMSG1fromFLW0(FileList[i]));
                     }
                     else if (FileType == "MSG1")
                     {
-                        LMS.Add(MSG1.GetMSG1fromFile(FileList[i], 0));
+                        LMS.Add(Util.MSG1.GetMSG1fromFile(FileList[i], 0));
                     }
                     else
                     {
@@ -243,7 +243,7 @@ namespace PersonaText
 
                         foreach (var Position in MSG1Position)
                         {
-                            LMS.Add(MSG1.GetMSG1fromFile(FileList[i], Position));
+                            LMS.Add(Util.MSG1.GetMSG1fromFile(FileList[i], Position));
                         }
                     }
                 }
