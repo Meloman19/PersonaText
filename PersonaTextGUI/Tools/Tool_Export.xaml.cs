@@ -7,6 +7,8 @@ using System.ComponentModel;
 using System.Threading;
 using System.Timers;
 using System.Diagnostics;
+using PersonaTextLib.Extensions;
+using PersonaTextLib.Types;
 
 namespace PersonaText
 {
@@ -96,12 +98,12 @@ namespace PersonaText
 
         private void ComboBoxItem_Selected_1(object sender, RoutedEventArgs e)
         {
-            OVE.MSG1.SaveAsTextOption = 1;
+            //OVE.MSG1.SaveAsTextOption = 1;
         }
 
         private void ComboBoxItem_Selected_2(object sender, RoutedEventArgs e)
         {
-            OVE.MSG1.SaveAsTextOption = 2;
+            //OVE.MSG1.SaveAsTextOption = 2;
         }
     }
 
@@ -111,7 +113,7 @@ namespace PersonaText
         public bool Abort = false;
         public bool SaveMSG1 = false;
 
-        public MSG1 MSG1 = new MSG1();
+        // public MSG1 MSG1 = new MSG21(Static.IsLittleEndian);
         public List<string> FileList = new List<string>();
         public List<MemoryStream> LMS = new List<MemoryStream>();
         public List<long> MSG1Position = new List<long>();
@@ -194,6 +196,113 @@ namespace PersonaText
 
         public System.Timers.Timer timer;
 
+        public static class Utilites
+        {
+            public static MemoryStream GetMSG1fromPMD1(string FileName, bool IsLittleEndian)
+            {
+                MemoryStream returned = new MemoryStream();
+
+                try
+                {
+                    BinaryReader BR;
+
+                    if (IsLittleEndian)
+                        BR = new BinaryReader(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+                    else
+                        BR = new BinaryReaderBE(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+
+                    BR.BaseStream.Position = 0x20;
+
+                    while (BR.ReadInt32() != 6)
+                        BR.BaseStream.Position += 12;
+
+                    int MSG1_Size = BR.ReadInt32();
+                    BR.BaseStream.Position += 4;
+                    int MSG1_Position = BR.ReadInt32();
+
+                    BR.BaseStream.Position = MSG1_Position;
+                    byte[] buffer = BR.ReadBytes(MSG1_Size);
+
+                    returned.Write(buffer, 0, MSG1_Size);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Get MSG1 from PM1 error!");
+                    MessageBox.Show(e.ToString());
+                    returned = new MemoryStream();
+                }
+
+                return returned;
+            }
+
+            public static MemoryStream GetMSG1fromFLW0(string FileName, bool IsLittleEndian)
+            {
+                MemoryStream returned = new MemoryStream();
+
+                try
+                {
+                    BinaryReader BR;
+
+                    if (IsLittleEndian)
+                        BR = new BinaryReader(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+                    else
+                        BR = new BinaryReaderBE(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+
+                    BR.BaseStream.Position = 0x20;
+
+                    while (BR.ReadInt32() != 3)
+                    {
+                        BR.BaseStream.Position += 12;
+                    }
+                    BR.BaseStream.Position += 4;
+                    int MSG1_Size = BR.ReadInt32();
+                    int MSG1_Position = BR.ReadInt32();
+
+                    BR.BaseStream.Position = MSG1_Position;
+                    byte[] buffer = BR.ReadBytes(MSG1_Size);
+
+                    returned.Write(buffer, 0, MSG1_Size);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Get MSG1 from BF error!");
+                    MessageBox.Show(e.ToString());
+                    returned = new MemoryStream();
+                }
+
+                return returned;
+            }
+
+            public static MemoryStream GetMSG1fromFile(string FileName, long Position, bool IsLittleEndian)
+            {
+                MemoryStream returned = new MemoryStream();
+                try
+                {
+                    BinaryReader BR;
+
+                    if (IsLittleEndian)
+                        BR = new BinaryReader(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+                    else
+                        BR = new BinaryReaderBE(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+
+                    BR.BaseStream.Position = Position + 0x4;
+
+                    int Size = BR.ReadInt32();
+                    BR.BaseStream.Position = Position;
+                    byte[] buffer = BR.ReadBytes(Size);
+
+                    returned.Write(buffer, 0, Size);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Get MSG1 from file error!");
+                    MessageBox.Show(e.ToString());
+                    returned = new MemoryStream();
+                }
+                return returned;
+            }
+        }
+
         public void Thread_Work()
         {
             timer.Start();
@@ -224,15 +333,15 @@ namespace PersonaText
 
                     if (FileType == "PMD1")
                     {
-                        LMS.Add(Util.MSG1.GetMSG1fromPMD1(FileList[i]));
+                        LMS.Add(Utilites.GetMSG1fromPMD1(FileList[i], Static.Setting.Misc.IsLittleEndian));
                     }
                     else if (FileType == "FLW0")
                     {
-                        LMS.Add(Util.MSG1.GetMSG1fromFLW0(FileList[i]));
+                        LMS.Add(Utilites.GetMSG1fromFLW0(FileList[i], Static.Setting.Misc.IsLittleEndian));
                     }
                     else if (FileType == "MSG1")
                     {
-                        LMS.Add(Util.MSG1.GetMSG1fromFile(FileList[i], 0));
+                        LMS.Add(Utilites.GetMSG1fromFile(FileList[i], 0, Static.Setting.Misc.IsLittleEndian));
                     }
                     else
                     {
@@ -243,7 +352,7 @@ namespace PersonaText
 
                         foreach (var Position in MSG1Position)
                         {
-                            LMS.Add(Util.MSG1.GetMSG1fromFile(FileList[i], Position));
+                            LMS.Add(Utilites.GetMSG1fromFile(FileList[i], Position, Static.Setting.Misc.IsLittleEndian));
                         }
                     }
                 }
@@ -253,7 +362,7 @@ namespace PersonaText
                     progressbar_total = 1001;
                     return;
                 }
-                MSG1.ParseMSG1(FileList[i], LMS, SaveMSG1);
+                //MSG1.ParseMSG1(FileList[i], LMS, SaveMSG1);
             }
             progressbar_total = 1001;
             timer.Stop();

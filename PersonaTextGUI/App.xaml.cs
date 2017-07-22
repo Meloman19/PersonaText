@@ -44,8 +44,8 @@ namespace PersonaText
             }
             else
             {
-                MSG1 MSG1 = new MSG1();
-                MSG1.ParseMSG1(fileopen, false);
+             //   MSG1 MSG1 = new MSG1(Static.IsLittleEndian);
+              //  MSG1.ParseMSG1(fileopen, false);
             }
         }
     }

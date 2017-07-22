@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonaText", "PersonaText\PersonaText.csproj", "{C6C35402-465C-43D6-A652-02C611F04D66}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonaTextGUI", "PersonaTextGUI\PersonaTextGUI.csproj", "{C6C35402-465C-43D6-A652-02C611F04D66}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonaTextLib", "PersonaTextLib\PersonaTextLib.csproj", "{9007F23C-349D-474D-8026-2A9A978D666D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonaText", "PersonaText\PersonaText.csproj", "{674BBD79-A2E6-45B7-9AE7-95C7C20E09DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{C6C35402-465C-43D6-A652-02C611F04D66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6C35402-465C-43D6-A652-02C611F04D66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6C35402-465C-43D6-A652-02C611F04D66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9007F23C-349D-474D-8026-2A9A978D666D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9007F23C-349D-474D-8026-2A9A978D666D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9007F23C-349D-474D-8026-2A9A978D666D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9007F23C-349D-474D-8026-2A9A978D666D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{674BBD79-A2E6-45B7-9AE7-95C7C20E09DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{674BBD79-A2E6-45B7-9AE7-95C7C20E09DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{674BBD79-A2E6-45B7-9AE7-95C7C20E09DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{674BBD79-A2E6-45B7-9AE7-95C7C20E09DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

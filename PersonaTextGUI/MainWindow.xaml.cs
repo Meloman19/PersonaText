@@ -7,6 +7,9 @@ using Microsoft.Win32;
 using System.Windows.Media.Imaging;
 using System.ComponentModel;
 using System.Windows.Controls;
+using PersonaTextLib.Extensions;
+using PersonaTextLib.Types;
+using PersonaTextLib;
 
 namespace PersonaText
 {
@@ -29,6 +32,12 @@ namespace PersonaText
 
     static class Static
     {
+        public static class Paths
+        {
+            public static string ExePath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
+        }
+
+        //public static bool IsLittleEndian = true;
         public static string datapath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
         public static string BackgroundPath = datapath + "\\background\\";
         public static int SUM = 0;
@@ -47,7 +56,6 @@ namespace PersonaText
             public static CharList new_char = new CharList(Static.datapath, "NEW");
             public static List<glyphYshift> char_shift = new List<glyphYshift>();
         }
-        public static BackgroundImage BackImage = new BackgroundImage();
         public static BackgroundImage BackImageVisual = new BackgroundImage();
         public static Variable Width = new Variable();
         public static Variable VisualWidth = new Variable();
@@ -55,56 +63,36 @@ namespace PersonaText
 
     public partial class MainWindow : Window
     {
-        void SetEvents()
-        {
+        BindingList<string> ComboBoxBackgrounds = new BindingList<string>() { "Empty" };
 
-        }
-
-        private void BackgroundImage_Changed()
-        {
-            Resources["TextXStart"] = Static.BackImage.textStartX;
-            Resources["TextYStart"] = Static.BackImage.textStartY;
-            Resources["NameXStart"] = Static.BackImage.nameStartX;
-            Resources["NameYStart"] = Static.BackImage.nameStartY;
-            Resources["Back"] = Static.BackImage.Image;
-        }
-
-        BindingList<string> Backgrounds = new BindingList<string>();
-
-        MSG1 MSG1;
-        ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow();
+        ObservableVariableMainWindow OVMW = new ObservableVariableMainWindow(new BackgroundImage());
 
         public MainWindow()
         {
-            SetEvents();
-            Static.BackImage.BackgroundImageChanged += BackgroundImage_Changed;
-            MSG1 = new MSG1();
             InitializeComponent();
-            Backgrounds.Add("Empty");
 
-            DataContext = OVMW;
-            SelectBack.DataContext = Backgrounds;
-            ScrollViewer.DataContext = MSG1;
-            mainmenu.DataContext = OVMW;
+            ScrollViewer.DataContext = OVMW.VisualMSG1;
+            MW.DataContext = OVMW;
+            SelectBack.DataContext = ComboBoxBackgrounds;
+
 
             if (Directory.Exists((Static.BackgroundPath)))
             {
                 DirectoryInfo DI = new DirectoryInfo(Static.BackgroundPath);
                 foreach (var file in DI.GetFiles(@"*.png"))
-                    Backgrounds.Add(file.Name);
+                    ComboBoxBackgrounds.Add(file.Name);
             }
-
 
             OpenFont();
 
             ViewVisualizer.IsChecked = Static.Setting.ViewVisualizer;
-            if (ViewVisualizer.IsChecked) { Resources["ViewVisualizer"] = Visibility.Visible; }
-            else { Resources["ViewVisualizer"] = Visibility.Collapsed; }
+            //if (ViewVisualizer.IsChecked) { Resources["ViewVisualizer"] = Visibility.Visible; }
+            //else { Resources["ViewVisualizer"] = Visibility.Collapsed; }
             ViewPrefixPostfix.IsChecked = Static.Setting.ViewPrefixPostfix;
-            if (ViewPrefixPostfix.IsChecked) { Resources["ViewPrefixPostfix"] = Visibility.Visible; }
-            else { Resources["ViewPrefixPostfix"] = Visibility.Collapsed; }
+            //if (ViewPrefixPostfix.IsChecked) { Resources["ViewPrefixPostfix"] = Visibility.Visible; }
+            //else { Resources["ViewPrefixPostfix"] = Visibility.Collapsed; }
 
-            SelectBack.SelectedIndex = Backgrounds.IndexOf(Static.Setting.SelectedBackground) == -1 ? Backgrounds.IndexOf("Empty") : Backgrounds.IndexOf(Static.Setting.SelectedBackground);
+            SelectBack.SelectedIndex = ComboBoxBackgrounds.IndexOf(Static.Setting.SelectedBackground) == -1 ? ComboBoxBackgrounds.IndexOf("Empty") : ComboBoxBackgrounds.IndexOf(Static.Setting.SelectedBackground);
         }
 
         void OpenFont()
@@ -151,25 +139,25 @@ namespace PersonaText
         private void ViewVisualizer_Checked(object sender, RoutedEventArgs e)
         {
             Static.Setting.ViewVisualizer = true;
-            Resources["ViewVisualizer"] = Visibility.Visible;
+            OVMW.ViewVisualizer = Visibility.Visible;
         }
 
         private void ViewVisualizer_Unchecked(object sender, RoutedEventArgs e)
         {
             Static.Setting.ViewVisualizer = false;
-            Resources["ViewVisualizer"] = Visibility.Collapsed;
+            OVMW.ViewVisualizer = Visibility.Collapsed;
         }
 
         private void ViewPrefixPostfix_Checked(object sender, RoutedEventArgs e)
         {
             Static.Setting.ViewPrefixPostfix = true;
-            Resources["ViewPrefixPostfix"] = Visibility.Visible;
+            OVMW.ViewPrefixPostfix = Visibility.Visible;
         }
 
         private void ViewPrefixPostfix_Unchecked(object sender, RoutedEventArgs e)
         {
-            Static.Setting.ViewPrefixPostfix = true;
-            Resources["ViewPrefixPostfix"] = Visibility.Collapsed;
+            Static.Setting.ViewPrefixPostfix = false;
+            OVMW.ViewPrefixPostfix = Visibility.Collapsed;
         }
         #endregion View
 
@@ -214,9 +202,11 @@ namespace PersonaText
                     }
                 }
 
-                Static.FontMap.old_char.ReadFONT(path);
-                File.Copy(path, @"OLD.FNT", true);
-                Static.FontMap.old_char.Update();
+                if (Static.FontMap.old_char.ReadFONT(path))
+                {
+                    File.Copy(path, @"OLD.FNT", true);
+                    Static.FontMap.old_char.Update();
+                }
             }
         }
 
@@ -224,8 +214,8 @@ namespace PersonaText
         {
             try
             {
-                CharSet CS = new CharSet(Static.FontMap.old_char);
-                CS.Owner = this;
+                CharSet CS = new CharSet();
+                CS.chlt = Static.FontMap.old_char;
                 if (CS.ShowDialog() == true)
                 {
                     Static.FontMap.old_char.Update();
@@ -238,6 +228,7 @@ namespace PersonaText
             }
         }
 
+        #region Save to
         void STold(object sender, RoutedEventArgs e)
         {
             SaveFileDialog sfd = new SaveFileDialog();
@@ -245,9 +236,15 @@ namespace PersonaText
             sfd.Filter = "Text (.txt)|*.txt";
             if (sfd.ShowDialog() == true)
             {
-                MSG1.SaveAsText(sfd.FileName, "", 2);
+                //  MSG1.SaveAsText(sfd.FileName, "", 2);
             }
         }
+
+        void SavetoMSG_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        #endregion Save to
 
         void CopyAll_Click(object sender, RoutedEventArgs e)
         {
@@ -255,14 +252,14 @@ namespace PersonaText
             {
                 if (MessageBox.Show("Really?", "Overwrite?", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
-                    foreach (var a in MSG1.msg)
+                    foreach (var a in OVMW.MSG1.msg)
                     {
                         foreach (var b in a.Strings)
                         {
-                            b.New_string = b.Old_string;
+                            b.NewString.Text = b.OldString.Text;
                         }
                     }
-                    foreach (var a in MSG1.name)
+                    foreach (var a in OVMW.MSG1.name)
                     {
                         a.NewName = a.OldName;
                     }
@@ -291,20 +288,20 @@ namespace PersonaText
                     }
                 }
 
-                Static.FontMap.new_char.ReadFONT(path);
-                File.Copy(path, @"NEW.FNT", true);
-                Static.FontMap.new_char.Update();
+                if (Static.FontMap.new_char.ReadFONT(path))
+                {
+                    File.Copy(path, @"NEW.FNT", true);
+                    Static.FontMap.new_char.Update();
+                }
             }
         }
 
         private void SetNewChar(object sender, RoutedEventArgs e)
         {
-            Hide();
-
             try
             {
-                CharSet CS = new CharSet(Static.FontMap.new_char);
-                CS.Owner = this;
+                CharSet CS = new CharSet();
+                CS.chlt = Static.FontMap.new_char;
                 if (CS.ShowDialog() == true)
                 {
                     Static.FontMap.new_char.Update();
@@ -315,13 +312,11 @@ namespace PersonaText
             {
                 MessageBox.Show(ex.ToString());
             }
-
-            Show();
         }
 
         private void SaveNewMSG1_Click(object sender, RoutedEventArgs e)
         {
-            using (MemoryStream MS = MSG1.GetNewMSG1())
+            using (MemoryStream MS = OVMW.VisualMSG1.GetNewMSG1())
             {
                 string Name = Static.FileInfo.SelectPosition >= 0 ? Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + "_NEW.MSG1"
                 : Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.MSG1";
@@ -336,17 +331,17 @@ namespace PersonaText
             {
                 if (a.Extension.ToUpper() == ".BMD")
                 {
-                    MemoryStream MS = MSG1.GetNewMSG1();
+                    MemoryStream MS = OVMW.VisualMSG1.GetNewMSG1();
                     Util.SaveToBMD(MS, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.BMD");
                 }
                 else if (a.Extension.ToUpper() == ".PM1")
                 {
-                    MemoryStream MS = MSG1.GetNewMSG1();
+                    MemoryStream MS = OVMW.VisualMSG1.GetNewMSG1();
                     Util.SaveToPM1(MS, a.FullName, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.PM1");
                 }
                 else if (a.Extension.ToUpper() == ".BF")
                 {
-                    MemoryStream MS = MSG1.GetNewMSG1();
+                    MemoryStream MS = OVMW.VisualMSG1.GetNewMSG1();
                     Util.SaveToBF(MS, a.FullName, Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + "_NEW.BF");
                 }
             }
@@ -409,30 +404,24 @@ namespace PersonaText
 
         void open_project()
         {
+            ScrollViewer.DataContext = null;
             OVMW.openfile = true;
-            Project Pr = new Project(Static.FileInfo.OpenFullFileName);
-            Pr.OpenProject();
-            MSG1.msg.Clear();
-            MSG1.name.Clear();
-            foreach (var MSG in Pr.msg)
+            if (OVMW.MSGProject.OpenProject(Static.FileInfo.OpenFullFileName))
             {
-                MSG1.msg.Add(MSG);
+                Static.FileInfo.SourceFileName = OVMW.MSGProject.SourceFileName;
+                Static.FileInfo.SelectPosition = OVMW.MSGProject.SelectPosition;
+                set_title();
             }
-            foreach (var NAME in Pr.name)
-            {
-                MSG1.name.Add(NAME);
-            }
-            set_title();
+            ScrollViewer.DataContext = OVMW.VisualMSG1;
         }
 
         void save_project()
         {
             string Name = Static.FileInfo.SelectPosition >= 0 ? Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + " - " + Convert.ToString(Static.FileInfo.SelectPosition).PadLeft(3, '0') + ".PTP"
                 : Path.GetDirectoryName(Static.FileInfo.OpenFullFileName) + "\\" + Path.GetFileNameWithoutExtension(Static.FileInfo.SourceFileName) + ".PTP";
-            Project Pr = new Project(Name);
-            Pr.name = MSG1.name.ToList();
-            Pr.msg = MSG1.msg.ToList();
-            Pr.SaveProject();
+            OVMW.MSGProject.SourceFileName = Static.FileInfo.SourceFileName;
+            OVMW.MSGProject.SelectPosition = Static.FileInfo.SelectPosition;
+            OVMW.MSGProject.SaveProject(Name);
         }
 
         void open_file()
@@ -440,9 +429,10 @@ namespace PersonaText
             OVMW.openfile = true;
             Static.FileInfo.SourceFileName = Path.GetFileName(Static.FileInfo.OpenFullFileName);
 
-            MSG1.ParseMSG1(Static.FileInfo.OpenFullFileName, false);
+            OVMW.VisualMSG1.Load(Static.FileInfo.OpenFullFileName, Static.Setting.Misc.IsLittleEndian);
 
             set_title();
+
         }
 
         void set_title()
@@ -459,16 +449,16 @@ namespace PersonaText
 
         void Grid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            Static.Width.Value = (e.NewSize.Width - 20) / 2;
+            OVMW.BackImage.RealWidth = (e.NewSize.Width - 20) / 2;
         }
 
         private void SelectBack_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Static.Setting.SelectedBackground = (sender as ComboBox).SelectedItem as string;
             if (Static.Setting.SelectedBackground == "Empty")
-            { Static.BackImage.Update("Empty"); }
+            { OVMW.BackImage.Update("Empty"); }
             else
-            { Static.BackImage.Update(Static.BackgroundPath + Static.Setting.SelectedBackground); }
+            { OVMW.BackImage.Update(Static.BackgroundPath + Static.Setting.SelectedBackground); }
         }
 
         private void Setting_Click(object sender, RoutedEventArgs e)
@@ -477,9 +467,9 @@ namespace PersonaText
             if (Set.ShowDialog() == true)
             {
                 if (Static.Setting.SelectedBackground == "Empty")
-                { Static.BackImage.Update("Empty"); }
+                { OVMW.BackImage.Update("Empty"); }
                 else
-                { Static.BackImage.Update(Static.BackgroundPath + Static.Setting.SelectedBackground); }
+                { OVMW.BackImage.Update(Static.BackgroundPath + Static.Setting.SelectedBackground); }
             }
         }
 
@@ -509,6 +499,61 @@ namespace PersonaText
                 {
                     _openfile = value;
                     Notify("openfile");
+                }
+            }
+        }
+
+        BackgroundImage _BackImage;
+        public BackgroundImage BackImage
+        {
+            get { return _BackImage; }
+            set
+            {
+                if (value != _BackImage)
+                {
+                    _BackImage = value;
+                    Notify("BackImage");
+                }
+            }
+        }
+
+        public PersonaFileTypes.MSG1 MSG1 = new PersonaFileTypes.MSG1(Static.Setting.Misc.IsLittleEndian, Static.FontMap.old_char, Static.FontMap.new_char);
+
+        public ObservableVariableMainWindow(BackgroundImage BackImage)
+        {
+            this.BackImage = BackImage;
+            VisualMSG1 = new VisualMSG1(MSG1, this.BackImage);
+            MSGProject = new Project(MSG1);
+        }
+
+        public Project MSGProject { get; private set; }
+
+        public VisualMSG1 VisualMSG1 { get; private set; }
+
+        private Visibility _ViewVisualizer = Visibility.Visible;
+        public Visibility ViewVisualizer
+        {
+            get { return _ViewVisualizer; }
+            set
+            {
+                if (value != _ViewVisualizer)
+                {
+                    _ViewVisualizer = value;
+                    Notify("ViewVisualizer");
+                }
+            }
+        }
+
+        private Visibility _ViewPrefixPostfix = Visibility.Visible;
+        public Visibility ViewPrefixPostfix
+        {
+            get { return _ViewPrefixPostfix; }
+            set
+            {
+                if (value != _ViewPrefixPostfix)
+                {
+                    _ViewPrefixPostfix = value;
+                    Notify("ViewPrefixPostfix");
                 }
             }
         }

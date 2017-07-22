@@ -1,11 +1,11 @@
-﻿<Window x:Name="mainwindow" x:Class="PersonaText.CharSet"
+﻿<Window x:Class="PersonaText.CharSet"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PersonaText"
         mc:Ignorable="d"
-        Title="Char &lt;-&gt; Glyph" Height="768.073" Width="770.783" Closing="Window_Closing" WindowStartupLocation="CenterScreen">
+        Title="Char &lt;-&gt; Glyph" Height="768.073" Width="770.783" Closing="Window_Closing" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition></RowDefinition>

@@ -14,49 +14,51 @@ using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.ComponentModel;
 using System.IO;
+using PersonaTextLib.Types;
+using PersonaTextLib;
 
 namespace PersonaText
 {
     public partial class ToolVisual : Window
     {
         #region Visual
-        Visual VisualText = new Visual();
-        Visual VisualName = new Visual();
+        //Visual VisualText = new Visual();
+        //Visual VisualName = new Visual();
 
         private void BackImageVisual_GlyphScaleChanged(double glyphScale)
         {
-            VisualName.Back_GlyphScaleChanged(glyphScale);
-            VisualText.Back_GlyphScaleChanged(glyphScale);
+           // VisualName.Back_GlyphScaleChanged(glyphScale);
+           // VisualText.Back_GlyphScaleChanged(glyphScale);
         }
 
         private void BackImageVisual_PixelWidthChanged(int pixelWidth)
         {
-            VisualName.Back_PixelWidthChanged(pixelWidth);
-            VisualText.Back_PixelWidthChanged(pixelWidth);
+           // VisualName.Back_PixelWidthChanged(pixelWidth);
+           // VisualText.Back_PixelWidthChanged(pixelWidth);
         }
 
         private void VisualWidth_ValueChanged(double width)
         {
-            VisualName.Width_ValueChanged(width);
-            VisualText.Width_ValueChanged(width);
+          //  VisualName.Width_ValueChanged(width);
+           // VisualText.Width_ValueChanged(width);
         }
 
         private void Name_ColorChanged(Color color)
         {
-            VisualName.Text = VisualName.Text?.ChangePallete(color);
+           // VisualName.Text = VisualName.Text?.ChangePallete(color);
         }
 
         private void Text_ColorChanged(Color color)
         {
-            VisualText.Text = VisualText.Text?.ChangePallete(color);
+          //  VisualText.Text = VisualText.Text?.ChangePallete(color);
         }
 
         private void BackgroundImageChanged_Changed()
         {
-            Resources["TextXStart"] = Static.BackImageVisual.textStartX;
-            Resources["TextYStart"] = Static.BackImageVisual.textStartY;
-            Resources["NameXStart"] = Static.BackImageVisual.nameStartX;
-            Resources["NameYStart"] = Static.BackImageVisual.nameStartY;
+            Resources["TextXStart"] = Static.BackImageVisual.TextStartX;
+            Resources["TextYStart"] = Static.BackImageVisual.TextStartY;
+            Resources["NameXStart"] = Static.BackImageVisual.NameStartX;
+            Resources["NameYStart"] = Static.BackImageVisual.NameStartY;
             Resources["Back"] = Static.BackImageVisual.Image;
         }
 
@@ -65,8 +67,8 @@ namespace PersonaText
         BindingList<string> Backgrounds = new BindingList<string>();
         ObservableVariable OV = new ObservableVariable();
 
-        List<MyByteArray> TEXT = new List<MyByteArray>();
-        List<MyByteArray> NAME = new List<MyByteArray>();
+        List<PersonaFileTypes.MSG1.MyStringElement> TEXT = new List<PersonaFileTypes.MSG1.MyStringElement>();
+        List<PersonaFileTypes.MSG1.MyStringElement> NAME = new List<PersonaFileTypes.MSG1.MyStringElement>();
 
         private CharList CharList = null;
 
@@ -85,16 +87,16 @@ namespace PersonaText
         {
             Static.VisualWidth.ValueChanged += VisualWidth_ValueChanged;
             VisualWidth_ValueChanged(Static.VisualWidth.Value);
-            Static.BackImageVisual.PixelWidthChanged += BackImageVisual_PixelWidthChanged;
+            //Static.BackImageVisual.PixelWidthChanged += BackImageVisual_PixelWidthChanged;
             BackImageVisual_PixelWidthChanged(Static.BackImageVisual.Image.PixelWidth);
-            Static.BackImageVisual.GlyphScaleChanged += BackImageVisual_GlyphScaleChanged;
-            BackImageVisual_GlyphScaleChanged(Static.BackImageVisual.glyphScale);
+            //Static.BackImageVisual.GlyphScaleChanged += BackImageVisual_GlyphScaleChanged;
+            BackImageVisual_GlyphScaleChanged(Static.BackImageVisual.GlyphScale);
             Static.Setting.Empty.Text.ColorChanged += Text_ColorChanged;
             Text_ColorChanged(Static.Setting.Empty.Text.Color);
             Static.Setting.Empty.Name.ColorChanged += Name_ColorChanged;
             Name_ColorChanged(Static.Setting.Empty.Name.Color);
 
-            Static.BackImageVisual.BackgroundImageChanged += BackgroundImageChanged_Changed; ;
+           // Static.BackImageVisual.BackgroundImageChanged += BackgroundImageChanged_Changed; ;
             InitializeComponent();
 
             SelectBack.DataContext = Backgrounds;
@@ -115,8 +117,8 @@ namespace PersonaText
             ComboBox_Font.DataContext = FontList;
             SelectBack.DataContext = Backgrounds;
 
-            VisText.DataContext = VisualText;
-            VisName.DataContext = VisualName;
+         //   VisText.DataContext = VisualText;
+          //  VisName.DataContext = VisualName;
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -131,14 +133,14 @@ namespace PersonaText
 
             HEX.Text = text;
 
-            VisualText.Text = TEXT.DrawText(CharList, Static.BackImageVisual.ColorText);
+            //VisualText.Text = TEXT.DrawText(CharList, Static.BackImageVisual.ColorText);
         }
 
         private void TextBox_NameChanged(object sender, TextChangedEventArgs e)
         {
             TextBox TB = sender as TextBox;
             NAME.GetMyByteArray(TB.Text, CharList.List);
-            VisualName.Text = NAME.DrawText(CharList, Static.BackImageVisual.ColorName);
+            //VisualName.Text = NAME.DrawText(CharList, Static.BackImageVisual.ColorName);
         }
 
         private void ComboBox_Font_SelectionChanged(object sender, SelectionChangedEventArgs e)

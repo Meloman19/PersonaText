@@ -83,7 +83,8 @@ namespace PersonaText
         public enum ElementBooleanNames
         {
             ViewVisualizer,
-            ViewPrefixPostfix
+            ViewPrefixPostfix,
+            IsLittleEndian
         }
 
         public enum ElementStringNames
@@ -401,6 +402,22 @@ namespace PersonaText
             }
         }
 
+        public class MiscClass : Set
+        {
+            public MiscClass()
+            {
+                IsLittleEndian = true;
+
+                Current.Name = "Misc";
+            }
+
+            public bool IsLittleEndian
+            {
+                get { return Current.Get(ElementBooleanNames.IsLittleEndian); }
+                set { Current.Set(ElementBooleanNames.IsLittleEndian, value); }
+            }
+        }
+
         void Init()
         {
             ViewVisualizer = true;
@@ -409,7 +426,13 @@ namespace PersonaText
             SelectedBackgroundVisual = "Empty";
 
             Current.Nest.Add(Empty.Current);
+            Current.Nest.Add(Misc.Current);
             Current.Name = "Settings";
+        }
+
+        public void CopyTo(Settings dest)
+        {
+           
         }
 
         public Settings()
@@ -424,6 +447,8 @@ namespace PersonaText
         }
 
         public EmptyClass Empty { get; set; } = new EmptyClass();
+
+        public MiscClass Misc { get; set; } = new MiscClass();
 
         public bool ViewVisualizer
         {
