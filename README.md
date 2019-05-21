@@ -1,2 +1,2 @@
-# PersonaText
-[Last release](https://github.com/Meloman19/PersonaText/releases/latest)
+# Attention
+This is old version of the program. Please use [PersonaEditor](https://github.com/Meloman19/PersonaEditor).
